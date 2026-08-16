@@ -29,7 +29,9 @@ body { margin: 0; }
 }
 
 /* Light-Theme automatisch nach OS-Präferenz (ohne JS), solange kein
-   data-theme gesetzt ist. Werte = GlassKit [data-theme="light"]. */
+   data-theme gesetzt ist. Werte = GlassKit [data-theme="light"].
+   Gespiegelt werden nur Tokens, deren Light-Wert vom Dark-Wert abweicht —
+   bei GlassKit-Updates gegen den [data-theme="light"]-Block gegenprüfen. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     color-scheme: light;
@@ -46,6 +48,16 @@ body { margin: 0; }
     --gl-color-success:        #28a745;
     --gl-color-error:          #dc3545;
     --gl-color-warning:        #e6a800;
+    --gl-color-success-dark:   #1e7e34;
+    --gl-color-error-dark:     #b02a37;
+    /* Tinte auf getönten Flächen (Badge/Chip) mischt im Light-Theme mit
+       Schwarz statt Weiß, der Scrim hinter der Tönung ist hell statt dunkel.
+       Ohne diese Zeilen erben die Badges hier die Dark-Werte. */
+    --gl-color-primary-on-surface: color-mix(in srgb, var(--gl-color-primary) 60%, #000000);
+    --gl-color-success-on-surface: color-mix(in srgb, var(--gl-color-success) 68%, #000000);
+    --gl-color-error-on-surface:   color-mix(in srgb, var(--gl-color-error)   82%, #000000);
+    --gl-state-scrim:          rgba(255, 255, 255, 0.30);
+    --gl-toggle-thumb-bg:      linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
     --gl-surface-1:            rgba(255, 255, 255, 0.50);
     --gl-surface-2:            rgba(255, 255, 255, 0.60);
     --gl-surface-3:            rgba(255, 255, 255, 0.70);
@@ -69,7 +81,7 @@ body { margin: 0; }
     --gl-icon-default:         rgba(26, 42, 54, 0.50);
     --gl-icon-muted:           rgba(26, 42, 54, 0.35);
     --gl-icon-strong:          rgba(26, 42, 54, 0.70);
-    --gl-icon-on-primary:      #ffffff;
+    --gl-icon-on-primary:      var(--gl-color-on-primary, #ffffff);
     --gl-icon-on-secondary:    #1a3a4a;
     --gl-icon-on-tertiary:     rgba(26, 42, 54, 0.50);
     --gl-shadow-card:          0 4px 20px rgba(0, 0, 0, 0.06);
@@ -85,11 +97,11 @@ body { margin: 0; }
     --gl-inset-milk:           inset 0 1px 2px rgba(255, 255, 255, 0.90);
     --gl-bg-aurora-1:          rgba(100, 200, 220, 0.15);
     --gl-bg-aurora-2:          rgba(240, 180, 100, 0.10);
-    --gl-bg-aurora-3:          rgba(120, 190, 210, 0.12);
-    --gl-bg-light-streak-1:    rgba(255, 255, 255, 0.35);
-    --gl-bg-light-streak-2:    rgba(255, 255, 255, 0.25);
-    --gl-bg-warm-glow:         rgba(240, 180, 100, 0.12);
-    --gl-placeholder:          rgba(26, 42, 54, 0.35);
+    --gl-bg-aurora-3:          rgba(120, 200, 230, 0.12);
+    --gl-bg-light-streak-1:    rgba(140, 230, 220, 0.10);
+    --gl-bg-light-streak-2:    rgba(160, 220, 210, 0.08);
+    --gl-bg-warm-glow:         rgba(240, 180, 100, 0.08);
+    --gl-placeholder:          rgba(26, 42, 54, 0.30);
   }
 }
 

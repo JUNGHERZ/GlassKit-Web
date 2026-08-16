@@ -8,13 +8,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "playwright test",
+    "check:tokens": "node scripts/check-light-mirror.mjs",
+    "test": "npm run check:tokens && playwright test",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
-    "@jungherz-de/glasskit": "^1.6.4",
+    "@jungherz-de/glasskit": "^1.7.0",
     "astro": "^5.0.0"
   },
   "devDependencies": {

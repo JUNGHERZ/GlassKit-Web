@@ -10,6 +10,49 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`scripts/check-light-mirror.mjs` — drift guard for the no-JS light mirror.**
+  The mirror block in site.css is the only place where a GlassKit token has to
+  be repeated by hand, and nothing verified it: no browser test runs the
+  JS-off + OS-light path. The script compares the mirror against GlassKit's
+  `[data-theme="light"]` block, fails with the exact lines to add, and runs via
+  `npm run check:tokens` — as the first step of `npm test` and as its own CI
+  step ahead of the smoke suite.
+
+### Fixed
+
+- **Five mirror values that never matched GlassKit.** The guard's first run
+  found `--gl-bg-aurora-3`, `--gl-bg-light-streak-1/2`, `--gl-bg-warm-glow` and
+  `--gl-placeholder` carrying hand-estimated values (white streaks instead of
+  the teal ones, off-by-one alphas) rather than GlassKit's — present since the
+  block was written, visible only with JS off under a light OS preference. Now
+  mirrored verbatim; `--gl-icon-on-primary` follows GlassKit's indirection
+  (`var(--gl-color-on-primary, #ffffff)`) so a dark-ink opt-in reaches the
+  no-JS path too.
+
+### Changed
+
+- **GlassKit `^1.6.4` → `^1.7.0`.** Accessibility release for tinted state
+  surfaces: badges now reach WCAG AA in both themes via a scrim behind the tint
+  and lightened (dark) / darkened (light) label ink. Visible change in the demo
+  and in every derived project — `.glass-badge--primary/--success` labels shift
+  (dark `#f5a623` → a pale sand, light `#e8852d` → a warm brown); the primary
+  button, checkbox tick and toggle knob are unchanged by design. State colors
+  re-branded in `brand.css` now move fill, border, text and glow together, so a
+  brand teal no longer leaves a green pill behind. Projects preferring the 1.6.x
+  chips add the five-token revert block from GlassKit's CHANGELOG to
+  `brand.css`.
+- **No-JS light fallback in `src/styles/site.css` completed.** The mirror block
+  gained the six tokens whose light value differs from the dark one:
+  `--gl-color-primary/success/error-on-surface`, `--gl-state-scrim`,
+  `--gl-color-success-dark`, `--gl-color-error-dark` — without them, badges
+  rendered with dark-theme ink when the OS is light and JS is off.
+  `--gl-toggle-thumb-bg` (a pre-existing gap) was mirrored in the same pass.
+  **Derived projects must apply this too**; see SKILL.md §3 and §7.
+
 ## [1.0.0] – 2026-07-19
 
 First versioned release — GlassKit Web becomes the official website layer of the

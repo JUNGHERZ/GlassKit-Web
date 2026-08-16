@@ -65,6 +65,10 @@ playwright.config.ts    Smoke-test config. baseURL/webServer derive from astro.c
                         (fork-safe); webServer rebuilds before preview (stale-dist guard).
 tests/smoke.spec.ts     CI smoke tests — run as the "test" job in deploy.yml before
                         deploy; a red suite blocks the release.
+scripts/check-light-mirror.mjs  Drift guard for the no-JS light mirror in site.css
+                        (§3): compares it against GlassKit's [data-theme="light"]
+                        block and prints the missing lines. `npm run check:tokens`,
+                        also the first step of `npm test` and its own CI step.
 ```
 
 ## 2. Section Catalog (compose in `src/pages/index.astro`)
@@ -150,7 +154,14 @@ adjacent in markup. B2C speaks "du", B2B speaks "Sie".
 
 **Theme:** `data-theme="dark|light"` on `<html>`. Bootstrap sets it from the OS
 preference before first paint; `#themeToggle` flips it. A no-JS CSS fallback block in
-site.css mirrors the light tokens — never delete it.
+site.css mirrors the light tokens — never delete it. It mirrors only the tokens whose
+light value differs from the dark one, and it drifts silently: tokens added to
+GlassKit's `[data-theme="light"]` block are missing here and fall back to their dark
+value in the no-JS/OS-light path (that is how 1.7.0's `--gl-state-scrim` and
+`--gl-color-*-on-surface` would have put dark badge ink into a light page). No browser
+test covers that path, so `npm run check:tokens`
+(`scripts/check-light-mirror.mjs`) compares the mirror against GlassKit on every
+`npm test` and in CI, and prints the exact lines to add.
 
 **Reveal/motion:** `.reveal` elements fade in via IntersectionObserver (only when
 `html.js` present). Stagger with inline `style="--d:.07s"`. `prefers-reduced-motion`
@@ -305,7 +316,11 @@ Server-side: always re-check the `botcheck` field (client check alone is bypassa
 Derived projects (monaoffice.de, monahilft.de, …) are standalone repos —
 template changes do NOT flow automatically. Updates live on two layers:
 
-**GlassKit layer:** bump `@jungherz-de/glasskit` in package.json — done.
+**GlassKit layer:** bump `@jungherz-de/glasskit` in package.json, then read GlassKit's
+own CHANGELOG for visible changes and run `npm run check:tokens` — it names the tokens
+the no-JS light mirror in site.css (§3) is missing after the bump. Projects derived
+before this guard existed should copy `scripts/check-light-mirror.mjs` and the
+`check:tokens` script along with it.
 
 **Template layer** — use the template repo as a second remote:
 
