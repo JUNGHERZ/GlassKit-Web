@@ -31,13 +31,17 @@ body { margin: 0; }
 /* Light-Theme automatisch nach OS-Präferenz (ohne JS), solange kein
    data-theme gesetzt ist. Werte = GlassKit [data-theme="light"].
    Gespiegelt werden nur Tokens, deren Light-Wert vom Dark-Wert abweicht —
-   bei GlassKit-Updates gegen den [data-theme="light"]-Block gegenprüfen. */
+   bei GlassKit-Updates gegen den [data-theme="light"]-Block gegenprüfen
+   (npm run check:tokens tut das). Seit GlassKit 1.11 sind die warmen
+   Rollen-Tokens aus --gl-color-primary gemischt statt fest bernsteinfarben;
+   der Spiegel trägt dieselben color-mix()-Ausdrücke, damit ein Branding
+   auch im No-JS-Light-Pfad bis in Glow und Fokusring reicht. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     color-scheme: light;
     --gl-color-primary:        #e8852d;
     --gl-color-primary-dark:   #c96a1e;
-    --gl-color-primary-mid:    #d97826;
+    --gl-color-primary-mid:    color-mix(in srgb, var(--gl-color-primary) 52%, var(--gl-color-primary-dark));
     --gl-color-bg-dark:        #e8ecf1;
     --gl-color-bg-mid:         #f0f4f8;
     --gl-color-bg-light:       #f5f7fa;
@@ -76,8 +80,8 @@ body { margin: 0; }
     --gl-border-medium:        rgba(0, 0, 0, 0.12);
     --gl-border-strong:        rgba(0, 0, 0, 0.15);
     --gl-border-milk:          rgba(0, 0, 0, 0.10);
-    --gl-border-warm:          rgba(232, 133, 45, 0.30);
-    --gl-border-focus:         rgba(232, 133, 45, 0.50);
+    --gl-border-warm:          color-mix(in srgb, var(--gl-color-primary) 30%, transparent);
+    --gl-border-focus:         color-mix(in srgb, var(--gl-color-primary) 50%, transparent);
     --gl-icon-default:         rgba(26, 42, 54, 0.50);
     --gl-icon-muted:           rgba(26, 42, 54, 0.35);
     --gl-icon-strong:          rgba(26, 42, 54, 0.70);
@@ -86,11 +90,11 @@ body { margin: 0; }
     --gl-icon-on-tertiary:     rgba(26, 42, 54, 0.50);
     --gl-shadow-card:          0 4px 20px rgba(0, 0, 0, 0.06);
     --gl-shadow-btn:           0 2px 10px rgba(0, 0, 0, 0.06);
-    --gl-shadow-btn-primary:   0 4px 16px rgba(232, 133, 45, 0.25), 0 2px 6px rgba(0, 0, 0, 0.08);
+    --gl-shadow-btn-primary:   0 4px 16px color-mix(in srgb, var(--gl-color-primary) 25%, transparent), 0 2px 6px rgba(0, 0, 0, 0.08);
     --gl-shadow-glow:          0 2px 8px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
     --gl-shadow-modal:         0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
     --gl-shadow-toast:         0 4px 20px rgba(0, 0, 0, 0.10);
-    --gl-shadow-focus:         0 0 0 3px rgba(232, 133, 45, 0.25);
+    --gl-shadow-focus:         0 0 0 3px color-mix(in srgb, var(--gl-color-primary) 25%, transparent);
     --gl-inset-subtle:         inset 0 1px 1px rgba(255, 255, 255, 0.60);
     --gl-inset-medium:         inset 0 1px 1px rgba(255, 255, 255, 0.70);
     --gl-inset-strong:         inset 0 1px 2px rgba(255, 255, 255, 0.80);
@@ -1638,17 +1642,15 @@ html:not(.js) .glass-accordion__content { max-height: none; }
 
 .glw-prose--article { margin-top: 32px; max-width: none; }
 
-/* Markdown-Ausgabe im Artikel */
-.glw-prose--article h2 {
-  font-size: 1.3rem;
-  margin: 18px 0 0;
-}
+/* Markdown-Ausgabe im Artikel: nur die Abweichungen von .glass-prose —
+   größere Überschriften, gedämpfte Absätze und Listen, Links ohne
+   Unterstreichung (nur bei Hover), das kursive Serifen-Zitat ohne Fläche,
+   Code mit Rahmen. */
+.glw-prose--article h2 { font-size: 1.3rem; }
 
 .glw-prose--article h3 {
   font-size: 1.05rem;
   font-weight: var(--gl-font-weight-semibold);
-  color: var(--gl-color-text-heading);
-  margin: 10px 0 0;
 }
 
 .glw-prose--article p {
@@ -1658,39 +1660,31 @@ html:not(.js) .glass-accordion__content { max-height: none; }
 
 .glw-prose--article ul,
 .glw-prose--article ol {
-  margin: 0;
   padding-left: 22px;
   display: grid;
   gap: 8px;
   font-size: 15.5px;
-  line-height: 1.65;
   color: var(--gl-color-text-muted);
 }
 
 .glw-prose--article li::marker { color: var(--gl-color-primary); }
 
-.glw-prose--article a {
-  color: var(--gl-color-primary);
-  text-decoration: none;
-}
+.glw-prose--article a { text-decoration: none; }
 
 .glw-prose--article a:hover { text-decoration: underline; }
 
-.glw-prose--article strong { color: var(--gl-color-text-heading); }
-
 .glw-prose--article blockquote {
-  margin: 0;
   padding: 4px 0 4px 18px;
   border-left: 3px solid var(--gl-border-warm);
+  border-radius: 0;
+  background: none;
   font-family: 'New York', Georgia, 'Times New Roman', serif;
   font-style: italic;
   color: var(--gl-color-text);
 }
 
 .glw-prose--article code {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 0.88em;
-  background: var(--gl-surface-2);
   border: 1px solid var(--gl-border-subtle);
   border-radius: var(--gl-radius-xs);
   padding: 1px 6px;
@@ -1748,26 +1742,27 @@ html:not(.js) .glass-accordion__content { max-height: none; }
 
 .glw-page { padding-top: clamp(120px, 16vh, 156px); }
 
+/* Fließtext baut seit GlassKit 1.14 auf .glass-prose auf — das Markup trägt
+   beide Klassen. GlassKit liefert Schrift, Rhythmus, Überschriften, Listen,
+   Links, Code, Zitate, Bilder und Tabellen; hier steht nur, was die Website
+   anders will: Spaltenbreite, Abstand zum Kopf, die kompaktere Überschrift
+   und gedämpfte Absätze. */
 .glw-prose {
   max-width: 720px;
-  display: grid;
-  gap: 14px;
   margin-top: 28px;
 }
 
 .glw-prose h2 {
   font-size: 1.15rem;
   font-weight: var(--gl-font-weight-semibold);
-  color: var(--gl-color-text-heading);
-  margin: 12px 0 0;
 }
 
-.glw-prose p {
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--gl-color-text-muted);
-  margin: 0;
-}
+/* GlassKit setzt 1.2em / 0.4em um Überschriften; die Website hatte 26 / 14 px
+   und will die Luft unter der Überschrift behalten. Das erste Kind bleibt
+   oben bündig (.glass-prose > :first-child gewinnt). */
+.glw-prose :is(h2, h3) { margin: 1.4em 0 0.75em; }
+
+.glw-prose p { color: var(--gl-color-text-muted); }
 
 .glw-page__back {
   margin-top: 32px;

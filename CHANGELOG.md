@@ -10,7 +10,7 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
-## [Unreleased]
+## [1.1.0] – 2026-09-20
 
 ### Added
 
@@ -35,6 +35,12 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ### Changed
 
+- **GlassKit 1.7.0 → 1.14.0.** Seven minor releases at once; read against GlassKit's changelog and measured on the built site, dark and light, before and after: the only differences are the 1.11.0 tokens that are now mixed from `--gl-color-primary` instead of holding fixed amber (`--gl-color-primary-mid`, `--gl-border-warm`, `--gl-border-focus`, `--gl-shadow-btn-primary`, `--gl-shadow-focus`) — within rounding of the old values with the default palette, and finally brand-aware with a custom one. Visible improvements that come along: `color-scheme` is declared (1.7.1), so browser-drawn controls follow the theme; checkbox, radio and toggle align on the first line of a multi-line label (1.11.0), which is exactly the consent checkbox in the contact form on a phone; badges can be chips (1.12.0); and `.glass-skeleton`, `.glass-table`, `.glass-prose` exist (1.14.0).
+
+- **`.glw-prose` builds on GlassKit's `.glass-prose`.** The text pages and the blog article carry `glass-prose glw-prose` now; GlassKit styles headings, paragraphs, lists, links, code, quotes, images and tables, and site.css keeps only what the website wants differently — column width, the compact heading, muted paragraphs, and for articles the larger headings, primary list markers, hover-only link underlines, the serif pull-quote without a surface, and bordered code. The old `display: grid; gap: 14px` rhythm is replaced by GlassKit's margins, with one em-based rule keeping the site's air under headings. Net effect on the rendered pages, measured: heading spacing within a pixel of before (13.8 px under a heading for 14, 25.8 px above for 26), line-height 1.65 → 1.6, and article paragraphs now render at their intended 15.5 px — the old base rule `.glw-prose p { font-size: 15px }` sat later in the file and had been overriding the article rule all along. Running text gains `pre`, `img`, `hr` and table styling it never had.
+
+- **No-JS light mirror carries the derived warm tokens.** `npm run check:tokens` flagged the five 1.11.0 tokens after the bump; the mirror now holds the same `color-mix()` expressions as GlassKit, so a brand colour reaches glow and focus ring in the OS-light, JS-off path too.
+
 - **GlassKit `^1.6.4` → `^1.7.0`.** Accessibility release for tinted state
   surfaces: badges now reach WCAG AA in both themes via a scrim behind the tint
   and lightened (dark) / darkened (light) label ink. Visible change in the demo
@@ -52,6 +58,12 @@ between your last synced release and the current one (SKILL.md, recipe §7).
   rendered with dark-theme ink when the OS is light and JS is off.
   `--gl-toggle-thumb-bg` (a pre-existing gap) was mirrored in the same pass.
   **Derived projects must apply this too**; see SKILL.md §3 and §7.
+
+### Template state at 1.1.0
+
+Astro 5 · GlassKit ^1.14.0 · 20 catalog sections · running text on GlassKit's `.glass-prose` with `.glw-prose` as the site's override layer · no-JS light mirror guarded by `npm run check:tokens` · everything else as at 1.0.0.
+
+---
 
 ## [1.0.0] – 2026-07-19
 

@@ -94,7 +94,7 @@ scripts/check-light-mirror.mjs  Drift guard for the no-JS light mirror in site.c
 | `Contact` | Contact form (`id="kontakt"` — nav/footer link here) | Endpoint configured in `site.ts` (`contactForm`); empty endpoint = demo mode. Honeypot field `botcheck`, required consent checkbox linking to `/datenschutz/`, B2B-only company field. With JS: fetch + inline `glass-status`; without JS: native POST to the endpoint. A click handler on the submit button shows `data-msg-invalid` when `checkValidity()` fails — a persistent, translatable message alongside the transient native bubble (with GlassKit ≤ 1.6.3 this was mandatory: the 0×0 hidden checkbox input gave the bubble no anchor, silently blocking the submit; fixed upstream in 1.6.4) |
 | `CtaBanner` | Closing call-to-action panel | Warm border (`--gl-border-warm`) |
 | `SiteFooter` | Link columns, newsletter dummy, legal links | Rendered by BaseLayout |
-| `glw-page` + `glw-prose` | Plain text subpage (Impressum/Datenschutz pattern) | See `src/pages/impressum.astro` |
+| `glw-page` + `glw-prose` | Plain text subpage (Impressum/Datenschutz pattern) | See `src/pages/impressum.astro`. The container carries `glass-prose glw-prose`: GlassKit's `.glass-prose` (≥ 1.14.0) styles the running text, `.glw-prose` only overrides column width, heading size and muted paragraphs |
 
 Section skeleton (every section follows this):
 
@@ -235,7 +235,9 @@ with many languages, consider refactoring to central per-language dictionaries
 with branches to keep copy next to markup.
 
 **Blog (opt-in):** posts are Markdown files in `src/content/blog/` rendered through
-`glw-prose--article`. Only ship it for clients who will actually publish. To REMOVE
+`glass-prose glw-prose glw-prose--article` — GlassKit's prose rules underneath, the
+article modifier on top (larger headings, primary list markers, hover-only link
+underlines, serif pull-quote, bordered code). Only ship it for clients who will actually publish. To REMOVE
 the blog: delete `src/content/`, `src/content.config.ts`, `src/pages/blog/`,
 `src/pages/rss.xml.ts`, the RSS `<link>` in BaseLayout, the three "Blog" links
 (desktop nav + mobile panel in SiteHeader, product column in SiteFooter), the blog
@@ -251,6 +253,7 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - Keep the bootstrap script as `<script is:inline>` in `<head>` (it must run before first paint).
 - Build every page/anchor link with `href()` from `src/data/site.ts`: `href('/#preise')`, `href('/impressum/')` — subpage links with trailing slash. Inside a language branch include the prefix: `href('/en/#pricing')`.
 - Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules.
+- Running text (rendered Markdown, legal pages) sits in a `glass-prose glw-prose` container. Do not restate what `.glass-prose` already styles; add to `.glw-prose` only what the site wants differently.
 - New sections: `glw-` prefix, global CSS in site.css, follow the section skeleton.
 - Pass per-page `title`, `description` (and optional `ogImage`) via BaseLayout props — canonical, OG/Twitter meta and sitemap come for free.
 - Keep decorative UI (`Hero` device panel, `Showcase` window) `aria-hidden` and non-interactive (spans styled as buttons, not real `<button>`).

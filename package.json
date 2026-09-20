@@ -1,6 +1,6 @@
 {
   "name": "glasskit-web",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "GlassKit Web – Astro-Template in der GlassKit-Designsprache: Glassmorphism-Websites für B2C und B2B",
   "type": "module",
   "private": true,
@@ -15,7 +15,7 @@
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
-    "@jungherz-de/glasskit": "^1.7.0",
+    "@jungherz-de/glasskit": "^1.14.0",
     "astro": "^5.0.0"
   },
   "devDependencies": {
