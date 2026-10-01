@@ -1,12 +1,12 @@
 <h1 align="center">🧊 GlassKit Web</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-orange?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.2.0-orange?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/Astro-5-ff5d01?style=flat-square&logo=astro&logoColor=white" alt="Astro 5">
   <img src="https://img.shields.io/badge/sections-20-green?style=flat-square" alt="20 Sections">
   <img src="https://img.shields.io/badge/i18n-DE%20%2F%20EN-7ec8e3?style=flat-square" alt="i18n DE/EN">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="License">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.1.0-f5a623?style=flat-square" alt="Changelog"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.2.0-f5a623?style=flat-square" alt="Changelog"></a>
   <a href="https://github.com/JUNGHERZ/GlassKit-Web/generate"><img src="https://img.shields.io/badge/template-use_this-44cc11?style=flat-square&logo=github&logoColor=white" alt="Use this template"></a>
 </p>
 

@@ -18,8 +18,8 @@
 
 ## Family
 
-- [GlassKit](https://glasskit.jungherz.com/): the CSS foundation — 24 glassmorphism components, design tokens
-- [GlassKit Elements](https://glasskit-elements.jungherz.com/): 29 web components for application UIs
+- [GlassKit](https://glasskit.jungherz.com/): the CSS foundation — 34 glassmorphism components, design tokens
+- [GlassKit Elements](https://glasskit-elements.jungherz.com/): 33 web components for application UIs
 
 ## Optional
 

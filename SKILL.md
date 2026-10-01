@@ -65,10 +65,13 @@ playwright.config.ts    Smoke-test config. baseURL/webServer derive from astro.c
                         (fork-safe); webServer rebuilds before preview (stale-dist guard).
 tests/smoke.spec.ts     CI smoke tests — run as the "test" job in deploy.yml before
                         deploy; a red suite blocks the release.
-scripts/check-light-mirror.mjs  Drift guard for the no-JS light mirror in site.css
-                        (§3): compares it against GlassKit's [data-theme="light"]
-                        block and prints the missing lines. `npm run check:tokens`,
-                        also the first step of `npm test` and its own CI step.
+scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm run check`
+                        runs both — first step of `npm test` and its own CI step:
+                        check-light-mirror.mjs (`check:tokens`) diffs the no-JS light
+                        mirror (§3) against GlassKit and prints the lines to add or
+                        replace; check-markup.mjs (`check:markup`) finds glw override
+                        classes whose GlassKit base class is missing in the markup (§4).
+                        Project-neutral tooling — derived projects take them as-is (§7).
 ```
 
 ## 2. Section Catalog (compose in `src/pages/index.astro`)
@@ -144,6 +147,29 @@ Building blocks, in escalating order:
 Rules: diagrams are decorative (`aria-hidden`) with the message in the
 section lead; never introduce raster/stock imagery for these purposes.
 
+### 2c. GlassKit building blocks vs. the glw layer
+
+GlassKit keeps growing (34 components in 1.19). Before adding a `glw-` block,
+check whether GlassKit already has it — and know where the website layer stays
+separate on purpose:
+
+| GlassKit | Use in a website for | Not for — the template keeps its own |
+|---|---|---|
+| `.glass-prose` (1.14) | All running text — the template builds on it (`glass-prose glw-prose`) | — |
+| `.glass-table` (1.14) | Comparison tables (plan matrix, spec sheet) inside a section | — |
+| `.glass-badge--warning` (1.18) | A third tone for "beta", "limited", "pending" chips | — |
+| `.glass-avatar` (early) | Real team photos (`<img>` inside, `object-fit: cover`), neutral initials on glass | LUMEN's `.glw-avatar`: initials on a filled brand gradient, a different look rather than a variant — swap to `.glass-avatar` when a project brings photos |
+| `.glass-segmented` (1.15) | A small exclusive choice in content, e.g. monthly / yearly pricing | The hero's audience switch `.glw-seg`: its two long labels wrap inside the pill on narrow phones, while `.glass-segmented` keeps items on one line — at 320 px the second option would run past the edge. The language pill `.glw-lang` is made of **links** (`aria-current`), and `.glass-segmented` styles only `aria-pressed` buttons |
+| `.glass-steps` (1.15) | Progress through a multi-step form | The `Process` section (`.glw-steps`): a marketing sequence of cards, not a progress state |
+| `.glass-empty` (1.15) | Empty states, e.g. a blog filter with no hits | The 404 page: an editorial text page with two actions |
+| `.glass-toast` + `__action` / `__close` (1.19) | JS-driven transient notices | Form results: `Contact` keeps the inline `glass-status` next to the form — it persists and needs no JS to be read |
+| `.glass-sheet` (1.15) | App-like bottom sheets | The mobile menu: `<details>`-based, must work without JS |
+| `.glass-skeleton` (1.14), `.glass-calendar`, `.glass-date-strip`, `.glass-image-picker` (1.16) | Rarely on a static marketing site — app territory (GlassKit Elements) | — |
+
+If a "not for" case changes upstream (e.g. `.glass-segmented` learns links or
+wrapping labels), migrate per the rule in §4 and register the pair in
+`scripts/check-markup.mjs`.
+
 ## 3. Core Mechanics
 
 **Audience (B2C/B2B):** `data-audience="b2c|b2b"` on `<html>`, set by the bootstrap
@@ -161,7 +187,9 @@ value in the no-JS/OS-light path (that is how 1.7.0's `--gl-state-scrim` and
 `--gl-color-*-on-surface` would have put dark badge ink into a light page). No browser
 test covers that path, so `npm run check:tokens`
 (`scripts/check-light-mirror.mjs`) compares the mirror against GlassKit on every
-`npm test` and in CI, and prints the exact lines to add.
+`npm test` and in CI, and prints the exact lines to add or replace. A project that
+pins `data-theme` on `<html>` (one theme by brand decision) needs no mirror — delete
+the block there; the guard sees the pinned attribute and passes.
 
 **Reveal/motion:** `.reveal` elements fade in via IntersectionObserver (only when
 `html.js` present). Stagger with inline `style="--d:.07s"`. `prefers-reduced-motion`
@@ -252,8 +280,10 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - Import order in BaseLayout: `@jungherz-de/glasskit/glasskit.css` **before** `../styles/site.css`.
 - Keep the bootstrap script as `<script is:inline>` in `<head>` (it must run before first paint).
 - Build every page/anchor link with `href()` from `src/data/site.ts`: `href('/#preise')`, `href('/impressum/')` — subpage links with trailing slash. Inside a language branch include the prefix: `href('/en/#pricing')`.
-- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules.
+- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink.
 - Running text (rendered Markdown, legal pages) sits in a `glass-prose glw-prose` container. Do not restate what `.glass-prose` already styles; add to `.glw-prose` only what the site wants differently.
+- When GlassKit ships a component the glw layer already has, build on it the same way: markup carries both classes (`glass-x glw-x`), site.css keeps only the deviations, and the pair goes into `PAIRS` in `scripts/check-markup.mjs` — derived projects take site.css wholesale but never their markup (§7), and the guard tells them where the base class is missing. Adopt only without regression; measure narrow viewports first (§2c names the cases that stay separate and why).
+- Stacking: since GlassKit 1.15.1 `.glass-bg` is one isolated stacking context and its children (header, sections, footer) no longer form their own — every `z-index` on the page competes with every other. The header sits at 50 (mobile panel and language menu live inside it). Keep section content below 50, avoid negative `z-index` (it now resolves against `.glass-bg` and its aurora decoration), and give anything that must cover the header (cookie banner, overlay) a deliberate ≥ 100.
 - New sections: `glw-` prefix, global CSS in site.css, follow the section skeleton.
 - Pass per-page `title`, `description` (and optional `ogImage`) via BaseLayout props — canonical, OG/Twitter meta and sitemap come for free.
 - Keep decorative UI (`Hero` device panel, `Showcase` window) `aria-hidden` and non-interactive (spans styled as buttons, not real `<button>`).
@@ -317,46 +347,82 @@ Server-side: always re-check the `botcheck` field (client check alone is bypassa
 ## 7. Recipe: Pull Template Updates into a Derived Project
 
 Derived projects (monaoffice.de, monahilft.de, …) are standalone repos —
-template changes do NOT flow automatically. Updates live on two layers:
-
-**GlassKit layer:** bump `@jungherz-de/glasskit` in package.json, then read GlassKit's
-own CHANGELOG for visible changes and run `npm run check:tokens` — it names the tokens
-the no-JS light mirror in site.css (§3) is missing after the bump. Projects derived
-before this guard existed should copy `scripts/check-light-mirror.mjs` and the
-`check:tokens` script along with it.
-
-**Template layer** — use the template repo as a second remote:
+template and GlassKit changes do NOT flow automatically. **Move both layers in
+one pass**, however many releases lie between: the template's site.css is
+written against the GlassKit version in the template's `package.json` (it uses
+classes and tokens older versions lack), and the guards in `scripts/` check
+exactly that pairing. Taking one layer without the other breaks the site
+quietly — that is what the guards are for.
 
 1. One-time setup in the project repo:
    `git remote add template https://github.com/JUNGHERZ/GlassKit-Web.git`
 2. `git fetch template`, then read the CURRENT template reference before doing
    anything: `git show template/main:SKILL.md` (the project's own SKILL.md copy
    may be outdated — this recipe itself might have changed).
-3. Review what changed — primary source is the template's
-   `git show template/main:CHANGELOG.md`: work through the entries between the
-   last synced release and now (the template is versioned since v1.0.0).
-   `git log --oneline ..template/main` and
-   `git diff HEAD template/main -- src/styles/site.css src/scripts/site.js`
+3. **Find the starting point and read what changed.** The last
+   `template-sync: <sha>` in `git log` marks the previous sync (none → the
+   project predates the recipe; compare with the template history around its
+   creation date). Work through `git show template/main:CHANGELOG.md` from that
+   point on — release entries name the manual work under **For derived
+   projects**. Then skim GlassKit's own CHANGELOG between the project's version
+   (`node_modules/@jungherz-de/glasskit/package.json`) and the template's, for
+   visible changes only. `git log --oneline <sha>..template/main` and
+   `git diff <sha> template/main -- src/styles/site.css src/scripts/site.js`
    remain the detail view.
-4. **Mechanics files** are designed to stay project-neutral and can be taken
-   wholesale — then REVIEW the staged diff and revert any project-specific
-   deviations you find (tests may reference removed sections, BaseLayout may
-   carry per-project meta):
-   `git checkout template/main -- src/styles/site.css src/scripts/site.js SKILL.md`
+4. **Take the mechanics files wholesale**, then REVIEW the staged diff and
+   revert any project-specific deviations you find (tests may reference removed
+   sections, BaseLayout may carry per-project meta):
+   `git checkout template/main -- src/styles/site.css src/scripts/site.js scripts/ SKILL.md`
    (add `src/layouts/BaseLayout.astro`, `tests/smoke.spec.ts`,
    `playwright.config.ts` only after diffing them — they drift more often).
+   If the project deliberately pins `data-theme` on `<html>`, delete the no-JS
+   light mirror block from the new site.css again (§3).
 5. **NEVER overwrite:** `src/data/site.ts`, `src/styles/brand.css`,
    `src/components/**` (copy lives there), `public/**`, legal pages. Never
    pull `site/` (GlassKit Web's product page) into a derived project.
-6. **New opt-in sections/features** (new files under `src/components/` since
-   the last sync): do NOT copy silently. List them with a one-line purpose
-   each (from §2's catalog) and **ask the user per feature** whether to adopt
-   it — e.g. "The template now ships `Bento` (feature cards with embedded
-   mini visualizations), `Flow` (process diagram), `HeroEditorial`
-   (typographic hero) — which should this project get?" If adopted: copy the
-   component (+ every language branch the project has), replace the LUMEN
-   demo copy with project copy, wire it into each branch's index.astro.
-7. Verify: `npm test` + `npm run build && npm run preview`; fix fallout.
-8. Commit with the synced template commit in the message
-   (`template-sync: <short-sha>`) — the next sync's step 3 uses it as the
-   starting point.
+6. **Bump GlassKit to the template's version** in the same pass:
+   `git show template/main:package.json | grep glasskit`, then
+   `npm install @jungherz-de/glasskit@<that version>`.
+7. **Wire the guards** if the project predates them — `package.json` scripts:
+   `"check": "npm run check:tokens && npm run check:markup"`,
+   `"check:tokens": "node scripts/check-light-mirror.mjs"`,
+   `"check:markup": "node scripts/check-markup.mjs"`,
+   `"test": "npm run check && playwright test"`; in the project's deploy
+   workflow a step `run: npm run check` before the smoke tests.
+8. **`npm run check` and fix exactly what it prints:**
+   - `check:tokens` — paste the printed lines into the light mirror. After
+     step 4 it usually passes; it fails where the project had edited its mirror.
+   - `check:markup` — add the named GlassKit base class at each printed
+     `file:line`. These are the components and pages step 5 protects, so no
+     wholesale copy can fix them (first case: `glw-prose` needs `glass-prose`
+     since template 1.1.0 — without it every legal page and blog post loses
+     line height, spacing and link styling).
+9. **Review what no guard sees:**
+   - `z-index` in the project's own CSS (`grep -n "z-index" src/styles/*.css`):
+     since GlassKit 1.15.1 all values on a page compete with each other and with
+     the header (50) — anything ≥ 50 outside the header, or negative, needs a
+     look (§4).
+   - `brand.css`: since GlassKit 1.11 `--gl-color-primary-mid`,
+     `--gl-border-warm`, `--gl-border-focus`, `--gl-shadow-btn-primary` and
+     `--gl-shadow-focus` follow `--gl-color-primary` by themselves — manual
+     overrides of these can usually go. Since 1.7.0 badge ink has its own
+     tokens (`--gl-color-*-on-surface`).
+   - Project rules that patched GlassKit behaviour — they may now counteract
+     an upstream fix. Example: badge text colours forced for contrast before
+     GlassKit 1.7.0; their light-mode half restores the very ink 1.7.0
+     replaced. Remove such workarounds once the upstream fix is in.
+10. **New opt-in sections/features** (new files under `src/components/` since
+    the last sync): do NOT copy silently. List them with a one-line purpose
+    each (from §2's catalog) and **ask the user per feature** whether to adopt
+    it — e.g. "The template now ships `Bento` (feature cards with embedded
+    mini visualizations), `Flow` (process diagram), `HeroEditorial`
+    (typographic hero) — which should this project get?" If adopted: copy the
+    component (+ every language branch the project has), replace the LUMEN
+    demo copy with project copy, wire it into each branch's index.astro.
+11. **Verify:** `npm test`, then `npm run build && npm run preview` and look
+    at the spots updates touch: badges and chips, legal pages and blog posts,
+    content scrolling under the header, and the page with JavaScript disabled
+    under a light OS preference.
+12. Commit with the synced template commit and the GlassKit step in the
+    message (`template-sync: <short-sha> · GlassKit 1.6.4 → 1.19.1`) — the next
+    sync's step 3 uses it as the starting point.
