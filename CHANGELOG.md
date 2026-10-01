@@ -10,6 +10,25 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.2.1] – 2026-10-01
+
+### Added
+
+- **Skip link and a `<main>` landmark on every page.** Measured on the live demo before: ten tab stops in the header (logo, five nav links, DE, EN, theme, CTA) before the first piece of content on every page, five on a phone, and no `<main>` at all — screen-reader users had no "main content" landmark to jump to, keyboard users no way past the header (WCAG 2.4.1, level A). BaseLayout now wraps every page in `<main id="main" tabindex="-1">` and puts a skip link in front of the header: the first tab stop, visible only with keyboard focus, and one Enter later the focus is in the content. It is the secondary button on an opaque plate — 5.0:1 (dark) and 11.7:1 (light) at the plate's darkest point; the primary's white on orange would miss AA. On the bilingual 404 it follows the language branch, like header and footer. Three smoke tests cover the keyboard path, both languages including the 404, and exactly one `<main>` on every page with header and footer outside it.
+- **Markup guard checks landmarks.** `npm run check:markup` now also fails when the layout lacks `<main>` or the skip link, and names every page or component that brings its own `<main>` — after a sync that would be a second, nested one.
+
+### For derived projects
+
+- In the BaseLayout diff (SKILL.md §7 step 4), take the `skipLabels` lines, the skip-link block and `<main id="main" tabindex="-1">` around `<slot />`; keep the project's own meta. The CSS (`.glw-skip`, `#main:focus`) arrives with site.css.
+- `npm run check` names what is left. monahilft wraps seven pages in its own `<main>` (home, podcast, the `[slug]` pages and the 404, each DE and EN) — remove those tags, the content stays. The other four have none.
+- A project with a third language adds its label to `skipLabels`.
+
+### Template state at 1.2.1
+
+Astro 5 · GlassKit ^1.19.1 · skip link and one `<main>` landmark on every page, guarded · everything else as at 1.2.0.
+
+---
+
 ## [1.2.0] – 2026-10-01
 
 ### Changed

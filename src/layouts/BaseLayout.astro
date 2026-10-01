@@ -26,6 +26,10 @@ const ogLocale = languages.find((l) => l.code === lang)?.locale ?? 'de_DE';
 const canonicalPath = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const canonical = new URL(canonicalPath, Astro.site);
 const ogImageUrl = new URL(ogImage, Astro.site);
+// Skip-Link-Text je Sprache — die einzige Copy im Layout. Weitere Sprache:
+// eine Zeile hier (SKILL.md §3b); fehlt sie, greift Englisch.
+const skipLabels: Record<string, string> = { de: 'Zum Inhalt springen', en: 'Skip to content' };
+const skipLabel = (code: string) => skipLabels[code] ?? skipLabels.en;
 ---
 <html lang={lang}>
   <head>
@@ -76,6 +80,18 @@ const ogImageUrl = new URL(ogImage, Astro.site);
     {/* id="top" (Ziel der Brand-Links) muss auf dem scrollenden Inhalt liegen —
         auf dem fixed Header würde ein Same-Page-Klick auf /#top nicht scrollen. */}
     <div class="glass-bg" id="top">
+      {/* Skip-Link: erster Tab-Stopp jeder Seite, springt über die Header-
+          Navigation in <main id="main">. Sichtbar erst mit Tastaturfokus
+          (.glw-skip in site.css). Auf nicht übersetzten Seiten je Sprachzweig
+          wie Header und Footer. */}
+      {translated === false && languages.length > 1 ? (
+        <>
+          <div class="glw-i18n glw-i18n--de"><a class="glass-btn glass-btn--secondary glass-btn--sm glass-btn--auto glw-skip" href="#main">{skipLabel('de')}</a></div>
+          <div class="glw-i18n glw-i18n--en" lang="en"><a class="glass-btn glass-btn--secondary glass-btn--sm glass-btn--auto glw-skip" href="#main">{skipLabel('en')}</a></div>
+        </>
+      ) : (
+        <a class="glass-btn glass-btn--secondary glass-btn--sm glass-btn--auto glw-skip" href="#main">{skipLabel(lang)}</a>
+      )}
       {/* Header/Footer je Sprachzweig (Nav-Labels sind Copy). Eine weitere
           Sprache bekommt hier einen weiteren Zweig — siehe SKILL.md §3b.
           Nicht übersetzte Seiten (404, eine Datei für alle Pfade): beide
@@ -90,7 +106,12 @@ const ogImageUrl = new URL(ogImage, Astro.site);
       ) : (
         <SiteHeader translated={translated} />
       )}
-      <slot />
+      {/* Das einzige <main> der Seite: Seiten und Komponenten setzen kein
+          eigenes. tabindex="-1", damit der Skip-Link den Fokus wirklich hierher
+          setzt; Header und Footer bleiben außerhalb (eigene Landmarks). */}
+      <main id="main" tabindex="-1">
+        <slot />
+      </main>
       {translated === false && languages.length > 1 ? (
         <>
           <div class="glw-i18n glw-i18n--de"><SiteFooter /></div>

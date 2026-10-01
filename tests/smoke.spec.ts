@@ -103,6 +103,42 @@ test('Footer-Brand (#top) scrollt zurück nach oben', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
 
+test('Skip-Link: erster Tab-Stopp, springt über den Header in den Inhalt', async ({ page }) => {
+  await page.goto('');
+  await page.keyboard.press('Tab');
+  const skip = page.locator('.glw-skip');
+  await expect(skip).toBeFocused();
+  await expect(skip).toHaveText('Zum Inhalt springen');
+  // Mit Fokus im Viewport (ohne Fokus liegt er darüber)
+  expect((await skip.boundingBox())?.y).toBeGreaterThanOrEqual(0);
+
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main#main')).toBeFocused();
+  // Der nächste Tab-Stopp liegt im Inhalt — die zehn Header-Stopps sind übersprungen
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => !!document.activeElement?.closest('main'))).toBe(true);
+});
+
+test('Skip-Link spricht die Sprache der Seite, auch auf der zweisprachigen 404', async ({ page }) => {
+  for (const [path, label] of [
+    ['en/', 'Skip to content'],
+    ['diese-seite-gibt-es-nicht/', 'Zum Inhalt springen'],
+    ['en/diese-seite-gibt-es-nicht/', 'Skip to content'],
+  ]) {
+    await page.goto(path);
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.glw-skip:focus'), path).toHaveText(label);
+  }
+});
+
+test('Landmarks: jede Seite hat genau ein <main>, Header und Footer liegen außerhalb', async ({ page }) => {
+  for (const path of [...pages.map((p) => p.path), 'diese-seite-gibt-es-nicht/']) {
+    await page.goto(path);
+    await expect(page.locator('main'), path || '/').toHaveCount(1);
+    await expect(page.locator('main .glw-header, main .glw-footer'), path || '/').toHaveCount(0);
+  }
+});
+
 test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand', async ({ page }) => {
   await page.goto('');
   const status = page.locator('#contactStatus');

@@ -37,7 +37,9 @@ src/styles/brand.css    Per-project brand overrides (--gl-* tokens ONLY, loads l
 src/scripts/site.js     Behavior: theme toggle, audience switch, reveal, tilt.
                         Progressive enhancement — pages must work without it.
 src/layouts/BaseLayout.astro  <head>, CSS imports (GlassKit BEFORE site.css),
-                        bootstrap <script is:inline>, glass-bg wrapper, header/footer.
+                        bootstrap <script is:inline>, glass-bg wrapper, skip link,
+                        header/footer and the page's only <main id="main"> around
+                        the slot (§3 Landmarks).
 src/components/*.astro  One file per section. Copy lives HERE, next to its markup.
                         Repeated structures (features, stats, plans) are frontmatter
                         const arrays rendered with .map().
@@ -70,7 +72,8 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
                         check-light-mirror.mjs (`check:tokens`) diffs the no-JS light
                         mirror (§3) against GlassKit and prints the lines to add or
                         replace; check-markup.mjs (`check:markup`) finds glw override
-                        classes whose GlassKit base class is missing in the markup (§4).
+                        classes whose GlassKit base class is missing in the markup (§4)
+                        and any `<main>` outside the layout (§3 Landmarks).
                         Project-neutral tooling — derived projects take them as-is (§7).
 ```
 
@@ -191,6 +194,16 @@ test covers that path, so `npm run check:tokens`
 pins `data-theme` on `<html>` (one theme by brand decision) needs no mirror — delete
 the block there; the guard sees the pinned attribute and passes.
 
+**Landmarks & skip link:** BaseLayout wraps every page in the one
+`<main id="main" tabindex="-1">` and puts a skip link (`.glw-skip`, "Zum Inhalt
+springen" / "Skip to content") in front of the header — the first tab stop,
+visible only with keyboard focus, one Enter lands in the content instead of
+ten header stops later (WCAG 2.4.1). Header and footer stay outside `<main>`;
+they are landmarks of their own. Pages and components never add a `<main>` —
+`npm run check:markup` names any it finds. The skip link is the secondary
+button on an opaque plate (≥ 5:1 in both themes); the primary's white on orange
+would miss AA. Its labels are the only copy in BaseLayout (`skipLabels`, §3b).
+
 **Reveal/motion:** `.reveal` elements fade in via IntersectionObserver (only when
 `html.js` present). Stagger with inline `style="--d:.07s"`. `prefers-reduced-motion`
 disables float/tilt/reveal — keep that media block intact.
@@ -241,7 +254,9 @@ Rules for language branches:
   (site.js reads them; German fallbacks live in site.js) — including
   `data-msg-invalid`, shown when native validation blocks the submit.
 - Header/Footer are part of each branch (nav labels are copy); BaseLayout picks
-  the pair by locale — a new language adds one more branch there.
+  the pair by locale — a new language adds one more branch there, plus its
+  skip-link label in `skipLabels` and a `.glw-i18n--<code>` skip link next to
+  the header's on untranslated pages (missing labels fall back to English).
 
 **Add a language:** extend `languages[]` + astro.config locales; copy
 `src/components/en/` + `src/pages/en/` to the new code and translate; add the
@@ -285,6 +300,7 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - When GlassKit ships a component the glw layer already has, build on it the same way: markup carries both classes (`glass-x glw-x`), site.css keeps only the deviations, and the pair goes into `PAIRS` in `scripts/check-markup.mjs` — derived projects take site.css wholesale but never their markup (§7), and the guard tells them where the base class is missing. Adopt only without regression; measure narrow viewports first (§2c names the cases that stay separate and why).
 - Stacking: since GlassKit 1.15.1 `.glass-bg` is one isolated stacking context and its children (header, sections, footer) no longer form their own — every `z-index` on the page competes with every other. The header sits at 50 (mobile panel and language menu live inside it). Keep section content below 50, avoid negative `z-index` (it now resolves against `.glass-bg` and its aurora decoration), and give anything that must cover the header (cookie banner, overlay) a deliberate ≥ 100.
 - New sections: `glw-` prefix, global CSS in site.css, follow the section skeleton.
+- Every page goes through BaseLayout, which brings the skip link and the one `<main>`. Pages start their markup at `<section>`; never wrap content in a second `<main>`, never move header or footer into it.
 - Pass per-page `title`, `description` (and optional `ogImage`) via BaseLayout props — canonical, OG/Twitter meta and sitemap come for free.
 - Keep decorative UI (`Hero` device panel, `Showcase` window) `aria-hidden` and non-interactive (spans styled as buttons, not real `<button>`).
 
@@ -328,7 +344,7 @@ Server-side: always re-check the `botcheck` field (client check alone is bypassa
 6. Replace `public/og.png` (1200×630 social preview) and `public/favicon.svg`.
 7. Choose sections: reorder/remove imports in `src/pages/index.astro`; single-audience sites may drop the switch and all `.only-b2b` blocks. Mirror the choice in `src/pages/en/index.astro` — or remove i18n entirely for single-language projects (steps in §3b).
 8. Fill `impressum.astro` / `datenschutz.astro` with real legal content.
-9. Verify: `npm test` (smoke suite; covers themes × audiences × viewports, no-JS, subpage links) plus a manual look via `npm run build && npm run preview`. If sections/pages were removed, update `tests/smoke.spec.ts` accordingly.
+9. Verify: `npm test` (guards, then the smoke suite; covers themes × audiences × viewports, no-JS, subpage links, skip link and landmarks) plus a manual look via `npm run build && npm run preview`. If sections/pages were removed, update `tests/smoke.spec.ts` accordingly.
 10. Push to `main`; one-time repo setting: Settings → Pages → Source "GitHub Actions".
 
 ## 6. Recipe: Convert an Existing Website to This Template
@@ -336,7 +352,9 @@ Server-side: always re-check the `botcheck` field (client check alone is bypassa
 1. Inventory the existing site's content and map each block to a catalog section
    (hero → `Hero` or `HeroEditorial`, feature/benefit lists → `Features`, prices → `Pricing`, testimonials
    → `Quote`, contact → `CtaBanner`, text pages → `glw-page`/`glw-prose`).
-2. Migrate copy into the matching components; do NOT port the old site's CSS.
+2. Migrate copy into the matching components; do NOT port the old site's CSS —
+   nor its page frame: `<main>`, skip link and header/footer come from
+   BaseLayout, the old site's own wrappers stay behind.
 3. For content with no matching section type, build a new `glw-` section following the
    skeleton and rules above — compose from GlassKit components (`glass-card`,
    `glass-list`, `glass-badge`, …) instead of importing foreign styles.
@@ -374,7 +392,8 @@ quietly — that is what the guards are for.
    sections, BaseLayout may carry per-project meta):
    `git checkout template/main -- src/styles/site.css src/scripts/site.js scripts/ SKILL.md`
    (add `src/layouts/BaseLayout.astro`, `tests/smoke.spec.ts`,
-   `playwright.config.ts` only after diffing them — they drift more often).
+   `playwright.config.ts` only after diffing them — they drift more often; from
+   the BaseLayout diff take at least the skip link and `<main>` of 1.2.1).
    If the project deliberately pins `data-theme` on `<html>`, delete the no-JS
    light mirror block from the new site.css again (§3).
 5. **NEVER overwrite:** `src/data/site.ts`, `src/styles/brand.css`,
@@ -396,7 +415,9 @@ quietly — that is what the guards are for.
      `file:line`. These are the components and pages step 5 protects, so no
      wholesale copy can fix them (first case: `glw-prose` needs `glass-prose`
      since template 1.1.0 — without it every legal page and blog post loses
-     line height, spacing and link styling).
+     line height, spacing and link styling). It also names pages that bring
+     their own `<main>` (remove the tag, keep the content) and a layout still
+     missing `<main>` or the skip link.
 9. **Review what no guard sees:**
    - `z-index` in the project's own CSS (`grep -n "z-index" src/styles/*.css`):
      since GlassKit 1.15.1 all values on a page compete with each other and with

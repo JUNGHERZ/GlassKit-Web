@@ -1,6 +1,6 @@
 {
   "name": "glasskit-web",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "GlassKit Web – Astro-Template in der GlassKit-Designsprache: Glassmorphism-Websites für B2C und B2B",
   "type": "module",
   "private": true,

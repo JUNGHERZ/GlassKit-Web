@@ -28,6 +28,28 @@ body { margin: 0; }
   outline-offset: 3px;
 }
 
+/* Skip-Link (BaseLayout): erster Tab-Stopp jeder Seite, unsichtbar bis zum
+   Tastaturfokus, dann oben links über dem Header (z-index über dessen 50,
+   SKILL.md §4). Secondary-Look: dunkle Schrift auf heller Platte erreicht AA,
+   Weiß auf Orange (Primary) nicht. Ohne Transition — erscheint sofort. */
+.glw-skip {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  transform: translateY(calc(-100% - 32px));
+  transition: none;
+  /* Deckend: der Secondary-Verlauf liegt auf dem Seitengrund statt auf Logo und Pillen */
+  background:
+    linear-gradient(to bottom, var(--gl-surface-milk-strong) 0%, var(--gl-surface-milk) 100%),
+    var(--gl-color-bg-mid);
+}
+
+.glw-skip:focus { transform: none; }
+
+/* Ziel des Skip-Links: Der Fokus landet im Inhalt, ohne Rahmen um die ganze Seite */
+#main:focus { outline: none; }
+
 /* Light-Theme automatisch nach OS-Präferenz (ohne JS), solange kein
    data-theme gesetzt ist. Werte = GlassKit [data-theme="light"].
    Gespiegelt werden nur Tokens, deren Light-Wert vom Dark-Wert abweicht —
