@@ -13,6 +13,20 @@
     });
   });
 
+  /* ---- Druck: immer im Light-Theme ----------------------------
+     Papier ist hell: im Dark-Theme druckte die helle Schrift fast
+     unsichtbar (Rezept aus GlassKit 1.21.1). Ohne JS übernimmt das der
+     Light-Spiegel in site.css, der auch für @media print gilt. */
+  var printTheme = null;
+  addEventListener('beforeprint', function () {
+    printTheme = root.getAttribute('data-theme');
+    root.setAttribute('data-theme', 'light');
+  });
+  addEventListener('afterprint', function () {
+    if (printTheme) root.setAttribute('data-theme', printTheme);
+    else root.removeAttribute('data-theme');
+  });
+
   /* ---- Zielgruppen-Umschalter (B2C / B2B) -------------------- */
   var segBtns = document.querySelectorAll('[data-audience-btn]');
   segBtns.forEach(function (btn) {

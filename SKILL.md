@@ -70,8 +70,8 @@ tests/smoke.spec.ts     CI smoke tests — run as the "test" job in deploy.yml b
 scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm run check`
                         runs both — first step of `npm test` and its own CI step:
                         check-light-mirror.mjs (`check:tokens`) diffs the no-JS light
-                        mirror (§3) against GlassKit and prints the lines to add or
-                        replace; check-markup.mjs (`check:markup`) finds glw override
+                        mirror (§3), including its surface-preset rules, against
+                        GlassKit and prints the lines to add or replace; check-markup.mjs (`check:markup`) finds glw override
                         classes whose GlassKit base class is missing in the markup (§4)
                         and any `<main>` outside the layout (§3 Landmarks).
                         Project-neutral tooling — derived projects take them as-is (§7).
@@ -97,7 +97,7 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
 | `Quote` | Serif testimonial, one per audience | Paired `.only-b2c` / `.only-b2b` blocks |
 | `Faq` | GlassKit accordion + FAQPage JSON-LD | Edit the `faqs[]` array; `audience: 'b2c'\|'b2b'` marks audience-specific questions. JSON-LD mirrors the default (no-JS) view: general + B2C only. Toggle handled by site.js; without JS all answers render expanded |
 | `LanguageSwitcher` | Language switcher in the header actions | Renders nothing with 1 language, a "DE \| EN" segmented pill with exactly 2, a details-based flag dropdown with 3+. Entries are LINKS to the equivalent page in the target language — never a JS toggle |
-| `Contact` | Contact form (`id="kontakt"` — nav/footer link here) | Endpoint configured in `site.ts` (`contactForm`); empty endpoint = demo mode. Honeypot field `botcheck`, required consent checkbox linking to `/datenschutz/`, B2B-only company field. With JS: fetch + inline `glass-status`; without JS: native POST to the endpoint. A click handler on the submit button shows `data-msg-invalid` when `checkValidity()` fails — a persistent, translatable message alongside the transient native bubble (with GlassKit ≤ 1.6.3 this was mandatory: the 0×0 hidden checkbox input gave the bubble no anchor, silently blocking the submit; fixed upstream in 1.6.4) |
+| `Contact` | Contact form (`id="kontakt"` — nav/footer link here) | Endpoint configured in `site.ts` (`contactForm`); empty endpoint = demo mode. Honeypot field `botcheck`, required consent checkbox linking to `/datenschutz/`, B2B-only company field. With JS: fetch + inline `glass-status`; without JS: native POST to the endpoint. A click handler on the submit button shows `data-msg-invalid` when `checkValidity()` fails — a persistent, translatable message alongside the transient native bubble (with GlassKit ≤ 1.6.3 this was mandatory: the 0×0 hidden checkbox input gave the bubble no anchor, silently blocking the submit; fixed upstream in 1.6.4). While sending, site.js disables the submit button; GlassKit ≥ 1.21.2 dims it — no own disabled look |
 | `CtaBanner` | Closing call-to-action panel | Warm border (`--gl-border-warm`) |
 | `SiteFooter` | Link columns, newsletter dummy, legal links | Rendered by BaseLayout |
 | `glw-page` + `glw-prose` | Plain text subpage (Impressum/Datenschutz pattern) | See `src/pages/impressum.astro`. The container carries `glass-prose glw-prose`: GlassKit's `.glass-prose` (≥ 1.14.0) styles the running text, `.glw-prose` only overrides column width, heading size and muted paragraphs |
@@ -167,6 +167,7 @@ separate on purpose:
 | `.glass-empty` (1.15) | Empty states, e.g. a blog filter with no hits | The 404 page: an editorial text page with two actions |
 | `.glass-toast` + `__action` / `__close` (1.19) | JS-driven transient notices | Form results: `Contact` keeps the inline `glass-status` next to the form — it persists and needs no JS to be read |
 | `.glass-sheet` (1.15) | App-like bottom sheets | The mobile menu: `<details>`-based, must work without JS |
+| `.glass-input-wrap` + `__prefix` / `__suffix` (1.22) | A unit, icon or button inside a field: price calculator, newsletter field with a send icon | — |
 | `.glass-skeleton` (1.14), `.glass-calendar`, `.glass-date-strip`, `.glass-image-picker` (1.16) | Rarely on a static marketing site — app territory (GlassKit Elements) | — |
 
 If a "not for" case changes upstream (e.g. `.glass-segmented` learns links or
@@ -190,9 +191,30 @@ value in the no-JS/OS-light path (that is how 1.7.0's `--gl-state-scrim` and
 `--gl-color-*-on-surface` would have put dark badge ink into a light page). No browser
 test covers that path, so `npm run check:tokens`
 (`scripts/check-light-mirror.mjs`) compares the mirror against GlassKit on every
-`npm test` and in CI, and prints the exact lines to add or replace. A project that
-pins `data-theme` on `<html>` (one theme by brand decision) needs no mirror — delete
-the block there; the guard sees the pinned attribute and passes.
+`npm test` and in CI, and prints the exact lines to add or replace. The block's
+media query is `(prefers-color-scheme: light), print`, so a page printed without
+JS is light too. A project that pins `data-theme` on `<html>` (one theme by brand
+decision) needs no mirror — delete the block there; the guard sees the pinned
+attribute and passes.
+
+**GlassKit presets:** `data-surface="solid"` (opaque surfaces, no blur, GlassKit
+1.24) and `data-surface="tint"` (see-through tints of the text colour for a page
+with a background of its own — brand colour, photo, pattern; 1.25) go on `<html>`
+in BaseLayout, next to the `data-theme` the bootstrap sets. The glw layer follows
+both without changes (measured: no element blurs, surfaces and shine follow the
+tokens); `.glw-media` stays a fixed picture. Without JS there is no `data-theme`,
+so the light mirror above would bring the glass back — the mirror therefore holds
+GlassKit's light preset blocks as two more rules (`:root[data-surface=…]:not([data-theme])`),
+dormant without the attribute and checked by the guard. With `solid`, set
+`--gl-color-bg-mid` in brand.css to the brand background: the solid surfaces are
+mixed over it. `data-density="compact"` (1.21) shrinks controls for app screens —
+rarely right for a marketing page.
+
+**Print:** paper is light, so site.js switches to the light theme on
+`beforeprint` and back on `afterprint` (GlassKit 1.21.1's recipe; without JS the
+mirror covers `print`). The skip link is hidden in print. Check a legal page with
+Ctrl+P after design changes — dark-only projects print light as well, which is
+intended.
 
 **Landmarks & skip link:** BaseLayout wraps every page in the one
 `<main id="main" tabindex="-1">` and puts a skip link (`.glw-skip`, "Zum Inhalt
@@ -221,6 +243,10 @@ freezes — always run Playwright/automation with
 The repo's own smoke suite (`npm test`) enforces this in a `beforeEach`;
 the `use.reducedMotion` config option alone is NOT enough — the test-runner
 fixture context does not reliably apply it (observed with Playwright 1.61).
+Tick GlassKit checkboxes, toggles and radios by role
+(`getByRole('checkbox').check()`): since GlassKit 1.20 the invisible input lies
+on top of the box and takes the click, so clicking `.glass-checkbox__box` fails
+with "intercepts pointer events".
 
 ### 3b. i18n (opt-in) — language branches
 
@@ -257,6 +283,10 @@ Rules for language branches:
   the pair by locale — a new language adds one more branch there, plus its
   skip-link label in `skipLabels` and a `.glw-i18n--<code>` skip link next to
   the header's on untranslated pages (missing labels fall back to English).
+- Right-to-left languages: GlassKit mirrors itself under `dir="rtl"` since 1.20;
+  the glw layer does not yet — about two dozen physical `left`/`right` values
+  (positions, the article list indent and quote rule, tilt angles) need
+  logical properties before an RTL branch ships.
 
 **Add a language:** extend `languages[]` + astro.config locales; copy
 `src/components/en/` + `src/pages/en/` to the new code and translate; add the
@@ -428,6 +458,9 @@ quietly — that is what the guards are for.
      `--gl-shadow-focus` follow `--gl-color-primary` by themselves — manual
      overrides of these can usually go. Since 1.7.0 badge ink has its own
      tokens (`--gl-color-*-on-surface`).
+   - Tests that click the visual part of a GlassKit control
+     (`.glass-checkbox__box`, a toggle track, a radio circle): since GlassKit
+     1.20 the invisible input lies on top — tick by role instead (§3 testing note).
    - Project rules that patched GlassKit behaviour — they may now counteract
      an upstream fix. Example: badge text colours forced for contrast before
      GlassKit 1.7.0; their light-mode half restores the very ink 1.7.0

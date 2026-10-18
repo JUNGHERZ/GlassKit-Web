@@ -154,7 +154,12 @@ test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand
   await page.locator('#cf-name').fill('Test Person');
   await page.locator('#cf-email').fill('test@example.com');
   await page.locator('#cf-message').fill('Testnachricht');
-  await page.locator('#kontakt .glass-checkbox__box').click();
+  // Über die Rolle anhaken: seit GlassKit 1.20.0 liegt das unsichtbare Input
+  // über dem Kästchen und nimmt den Klick selbst — ein Klick auf
+  // .glass-checkbox__box würde von ihm abgefangen.
+  const consent = page.locator('#kontakt').getByRole('checkbox');
+  await consent.check();
+  await expect(consent).toBeChecked();
   await page.locator('#kontakt [type="submit"]').click();
   await expect(status).toContainText('Demo-Modus');
   await expect(status).not.toHaveClass(/glw-status--error/);
@@ -235,6 +240,43 @@ test.describe('Ohne JavaScript', () => {
     // FAQ-Antworten sind ohne JS vollständig ausgeklappt
     await expect(page.locator('.glass-accordion__content').first()).toBeVisible();
   });
+
+  test('Druck ohne JS: dunkle Schrift auch bei dunkler OS-Präferenz', async ({ page }) => {
+    // Der Light-Spiegel gilt auch für @media print — ohne ihn gäbe es helle Schrift auf Papier
+    await page.emulateMedia({ colorScheme: 'dark', media: 'print' });
+    await page.goto('datenschutz/');
+    await expect(page.locator('.glw-prose p').first()).toHaveCSS('color', 'rgba(26, 42, 54, 0.55)');
+  });
+
+  for (const [surface, expected] of [
+    ['solid', /color-mix\(in srgb, #ffffff 50%, #f0f4f8\)/],
+    ['tint', /color-mix\(in srgb, #1a2a36 4%, transparent\)/],
+  ] as const) {
+    test(`Oberflächen-Preset ${surface} ohne JS: der Spiegel folgt data-surface`, async ({ page }) => {
+      // data-surface fest ins <html> schreiben, wie ein Projekt es in BaseLayout setzen würde
+      await page.route('**/*', async (route) => {
+        if (route.request().resourceType() !== 'document') return route.continue();
+        const res = await route.fetch();
+        const body = (await res.text()).replace(/<html([^>]*)>/, `<html$1 data-surface="${surface}">`);
+        await route.fulfill({ response: res, body });
+      });
+      await page.emulateMedia({ colorScheme: 'light' });
+      await page.goto('');
+      // Light-Wert des Presets statt des Glas-Spiegels (rgba(255, 255, 255, .5))
+      await expect(page.locator('html')).toHaveCSS('--gl-surface-1', expected);
+    });
+  }
+});
+
+test('Druck: Light-Theme fürs Papier, Skip-Link ausgeblendet', async ({ page }) => {
+  await page.goto('datenschutz/');
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await page.evaluate(() => dispatchEvent(new Event('beforeprint')));
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('.glw-skip')).toBeHidden();
 });
 
 test('RSS-Feed, Sitemap und llms.txt sind erreichbar', async ({ request }) => {

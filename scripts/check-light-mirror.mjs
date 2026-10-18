@@ -14,8 +14,11 @@
    als dunkle Badge-Tinte in einer hellen Seite gelandet.)
 
    Gespiegelt werden muss nur, was sich zwischen Dark und Light unterscheidet.
-   Ein Projekt mit festem data-theme am <html> (z. B. nur Dark) braucht keinen
-   Spiegel — dann meldet der Guard das und ist zufrieden.
+   Seit GlassKit 1.24 kommen die Oberflächen-Presets (data-surface="solid" |
+   "tint") dazu: Ohne data-theme griffe sonst der Glas-Spiegel, deshalb trägt
+   der Spiegel auch GlassKits Light-Blöcke der Presets — der Guard vergleicht
+   sie vollständig. Ein Projekt mit festem data-theme am <html> (z. B. nur
+   Dark) braucht keinen Spiegel — dann meldet der Guard das und ist zufrieden.
    Aufruf: npm run check:tokens   (läuft auch als Teil von npm test)
    ============================================================ */
 
@@ -67,17 +70,35 @@ const findGlasskit = (test, label) => {
   if (!rule) throw new Error(`GlassKit-Block nicht gefunden: ${label}`);
   return tokensOf(rule[1]);
 };
-const dark = findGlasskit((sel) => sel.split(',').some((s) => s.trim() === ':root'), ':root (dark)');
+const parts = (sel) => sel.split(',').map((s) => s.trim());
+const dark = findGlasskit((sel) => parts(sel).includes(':root'), ':root (dark)');
 const light = findGlasskit((sel) => sel === '[data-theme="light"]', '[data-theme="light"]');
+// Presets (ab GlassKit 1.24/1.25) — fehlen sie, ist GlassKit älter
+const optional = (test) => { const r = glasskitRules.find(([sel]) => test(sel)); return r ? tokensOf(r[1]) : null; };
+const PRESETS = [
+  { label: 'Preset solid/tint (Light)', since: '1.24.0',
+    glasskit: optional((sel) => parts(sel).includes('[data-surface="solid"][data-theme="light"]')),
+    selector: ':root[data-surface="solid"]:not([data-theme]), :root[data-surface="tint"]:not([data-theme])' },
+  { label: 'Preset tint', since: '1.25.0',
+    glasskit: optional((sel) => parts(sel).includes(':root[data-surface="tint"]')),
+    selector: ':root[data-surface="tint"]:not([data-theme])' },
+];
 const version = readFileSync(GLASSKIT, 'utf8').match(/v(\d+\.\d+\.\d+)/)?.[1] ?? '?';
 
 // Spiegel = die Regel mit genau dem Selektor :root:not([data-theme]) in irgendeinem
-// @media (prefers-color-scheme: light) — Projekte haben dort teils weitere Regeln.
+// @media (prefers-color-scheme: light) — mit oder ohne „, print"; Projekte haben dort
+// teils weitere Regeln. Im selben Block liegen die Preset-Regeln.
+const MEDIA = /^@media\s*\(\s*prefers-color-scheme\s*:\s*light\s*\)(\s*,\s*print)?$/;
 let mirror = null;
+const presetRules = new Map();
 for (const [sel, body] of rulesOf(stripComments(readFileSync(SITE, 'utf8')))) {
-  if (!/^@media\s*\(\s*prefers-color-scheme\s*:\s*light\s*\)$/.test(sel)) continue;
-  const rule = rulesOf(body).find(([inner]) => inner === ':root:not([data-theme])');
-  if (rule) { mirror = tokensOf(rule[1]); break; }
+  if (!MEDIA.test(sel)) continue;
+  const inner = rulesOf(body);
+  const rule = inner.find(([s]) => s === ':root:not([data-theme])');
+  if (!rule) continue;
+  mirror = tokensOf(rule[1]);
+  for (const [s, b] of inner) if (PRESETS.some((p) => p.selector === s)) presetRules.set(s, tokensOf(b));
+  break;
 }
 
 if (!mirror) {
@@ -134,8 +155,42 @@ if (unknown.length) {
   console.error('  älter als der Spiegel: Version in package.json prüfen, dann npm install.');
 }
 
-if (missing.length || wrong.length || unknown.length) {
-  console.error('\n  Referenz: SKILL.md §3 (Theme) und §7 (Updates).\n');
+// Presets: jede Regel muss GlassKits Preset-Block vollständig und wertgleich tragen
+let presetProblems = 0;
+const presetSummary = [];
+for (const preset of PRESETS) {
+  const mine = presetRules.get(preset.selector);
+  if (!preset.glasskit) {
+    if (mine) {
+      presetProblems++;
+      console.error(`\n✗ ${preset.label}: site.css spiegelt ein Preset, das GlassKit ${version} noch nicht kennt`);
+      console.error(`  (seit ${preset.since}) — @jungherz-de/glasskit heben, dann npm install.`);
+    }
+    continue;
+  }
+  if (!mine) {
+    presetProblems++;
+    console.error(`\n✗ ${preset.label} fehlt im Spiegel — ohne JS griffe bei data-surface das Glas.`);
+    console.error('  Im selben @media-Block nach der :root:not([data-theme])-Regel einfügen:\n');
+    console.error(`  ${preset.selector.replace(', ', ',\n  ')} {`);
+    for (const [name, value] of preset.glasskit) console.error(line(name, value));
+    console.error('  }');
+    continue;
+  }
+  const pMissing = [...preset.glasskit].filter(([n]) => !mine.has(n));
+  const pWrong = [...preset.glasskit].filter(([n, v]) => mine.has(n) && mine.get(n) !== v);
+  const pUnknown = [...mine.keys()].filter((n) => !preset.glasskit.has(n));
+  if (pMissing.length || pWrong.length || pUnknown.length) {
+    presetProblems++;
+    console.error(`\n✗ ${preset.label} weicht von GlassKit ${version} ab (${preset.selector}):\n`);
+    for (const [n, v] of pMissing) console.error(`${line(n, v)}   ← fehlt`);
+    for (const [n, v] of pWrong) console.error(`${line(n, v)}\n        bisher: ${mine.get(n)}`);
+    for (const n of pUnknown) console.error(`    ${n}   ← kennt GlassKit hier nicht`);
+  } else presetSummary.push(`${preset.label.replace('Preset ', '')} ${mine.size}`);
+}
+
+if (missing.length || wrong.length || unknown.length || presetProblems) {
+  console.error('\n  Referenz: SKILL.md §3 (Theme, Presets) und §7 (Updates).\n');
   process.exit(1);
 }
 
@@ -143,5 +198,6 @@ console.log(
   `✓ No-JS-Light-Spiegel deckt GlassKit ${version} ab: ` +
     `${mirror.size - redundant.length} abweichende Token gespiegelt` +
     (redundant.length ? `, ${redundant.length} überzählig (Light = Dark, unschädlich)` : '') +
+    (presetSummary.length ? `; Presets ${presetSummary.join(' + ')} Token` : '') +
     '.'
 );

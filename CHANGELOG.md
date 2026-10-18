@@ -10,6 +10,35 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.3.0] – 2026-10-18
+
+### Changed
+
+- **GlassKit `^1.19.1` → `^1.25.0`.** Six minor releases and four patches, measured as before: a computed-style protocol of 8,982 elements on eight page types in dark, light, mobile and no-JS light, before and after, and full-page screenshots of both builds served side by side. The protocol shows 658 differences, none of them in colour, size, position or spacing: `text-align: left` became `start` (right-to-left support, 1.20.0), inputs end in an ellipsis when their text overflows (1.25.0), list titles may break inside a long word (1.23.0), and the consent checkbox's invisible input now lies on top of its box and takes the click (1.20.0). The screenshots are pixel-identical in all fourteen cases — dark, light, phone, no-JS light and the ticked consent box included. The physical `padding-left` / `border-left` of the article overrides still win over GlassKit's new logical properties (same specificity, site.css loads later).
+- **No-JS light mirror** gained `--gl-select-chevron` (1.20.0: the select's arrow is drawn in the muted text colour in the light theme instead of white). The token guard named exactly this one line; of the 17 new theme tokens all others are the same in both themes.
+- **The contact-form test ticks the consent box by role.** With the input on top, a click on `.glass-checkbox__box` is intercepted ("intercepts pointer events") and the test timed out after 30 s; `getByRole('checkbox').check()` is what GlassKit intends.
+- **The submit button dims while sending.** site.js has always disabled it during the request; since GlassKit 1.21.2 a disabled `.glass-btn` looks disabled (0.45, not-allowed cursor).
+
+### Added
+
+- **Support for GlassKit's surface presets in the no-JS path.** `data-surface="solid"` (1.24.0) and `"tint"` (1.25.0) on `<html>` work with JavaScript out of the box — measured on the demo with the attribute in the served HTML: in dark and light, under both presets, not one element still blurs, and surfaces and shine follow the preset. Without JavaScript there is no `data-theme`, so the light mirror's glass surfaces outranked the preset (specificity 0,2,0 against 0,1,0) and brought translucent white plates and the inner shine back. The mirror now carries GlassKit's light preset blocks as two more rules, `:root[data-surface="solid" | "tint"]:not([data-theme])` — dormant without the attribute. The token guard compares them with GlassKit token by token and prints a missing rule ready to paste. Two smoke tests pin each preset into the served HTML with JavaScript off and check the surface token.
+- **Printing in the light theme.** Printed in the dark theme, the privacy page came out as light grey text on white paper, with the skip link at the bottom of the page. site.js now switches to the light theme on `beforeprint` and back on `afterprint` — the recipe from GlassKit 1.21.1 — and the light mirror's media query is `(prefers-color-scheme: light), print`, so a page printed without JavaScript is light too. The skip link is hidden in print (two classes: GlassKit's `a.glass-btn { display: inline-flex }` outranks one). Checked by PDF: the privacy page prints dark on white with the skip link gone; Chromium fires both events for its own PDF export. Two smoke tests cover the theme switch, the hidden skip link and the no-JS print.
+- **SKILL.md:** GlassKit presets and printing in §3, ticking GlassKit controls by role in the testing note, `.glass-input-wrap` in §2c, right-to-left in §3b (GlassKit mirrors itself since 1.20, the glw layer still has about two dozen physical left/right values), and the disabled submit button in the `Contact` row.
+
+### For derived projects
+
+All five were synced to 1.2.1 with GlassKit 1.19.1 on 2026-10-01 and carry the guards, so this is a regular sync per SKILL.md §7:
+
+- Take `src/styles/site.css`, `src/scripts/site.js`, `scripts/` and `SKILL.md`; bump GlassKit to `^1.25.0`; `npm run check` should pass right away.
+- **Change one line in the smoke suite:** all five click `#kontakt .glass-checkbox__box` in the contact-form test (jungherz-com line 178, monacore-eu 152, monahilft-de 179, monaoffice-de 154, wimmer-service-nrw 130). With GlassKit ≥ 1.20 that click is intercepted and the test times out; tick the box with `page.locator('#kontakt').getByRole('checkbox').check()`.
+- Print one legal page with Ctrl+P after the sync. Dark-only projects (jungherz-com and wimmer-service-nrw pin `data-theme="dark"`) print in the light theme as well — intended, paper is white.
+
+### Template state at 1.3.0
+
+Astro 5 · GlassKit ^1.25.0 · surface presets supported with and without JavaScript · light-theme printing · everything else as at 1.2.1.
+
+---
+
 ## [1.2.1] – 2026-10-01
 
 ### Added
