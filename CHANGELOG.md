@@ -10,6 +10,23 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.4.1] – 2026-10-18
+
+### Changed
+
+- **GlassKit `^1.26.0` → `^1.27.0`.** It adds the droplet — a fluid, iOS-26-style selection for the tab bar and `.glass-segmented` (`--droplet`), driven by the new optional module `glasskit-droplet.js` — and tokens for a capsule behind the active tab. The template uses neither. Computed-style protocol over 8,905 elements on eight page types in dark, light, mobile and no-JS light: 0 differences. The light mirror and its preset rules need nothing new — the droplet's gloss token is the same in both themes and `none` under the surface presets.
+- **SKILL.md §2c** names the droplet and how a project loads its module, and records that it does not change why the hero's audience switch stays `.glw-seg`.
+
+### For derived projects
+
+- Bump GlassKit to `^1.27.0` with the next sync and take `SKILL.md`; nothing else changes. The notes of 1.4.0 (and 1.3.0, if still open) apply as written.
+
+### Template state at 1.4.1
+
+Astro 5 · GlassKit ^1.27.0 · everything else as at 1.4.0.
+
+---
+
 ## [1.4.0] – 2026-10-18
 
 ### Fixed

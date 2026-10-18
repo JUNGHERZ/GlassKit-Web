@@ -155,7 +155,7 @@ section lead; never introduce raster/stock imagery for these purposes.
 
 ### 2c. GlassKit building blocks vs. the glw layer
 
-GlassKit keeps growing (34 components in 1.19). Before adding a `glw-` block,
+GlassKit keeps growing (34 components since 1.19, plus the droplet module in 1.27). Before adding a `glw-` block,
 check whether GlassKit already has it — and know where the website layer stays
 separate on purpose:
 
@@ -165,7 +165,7 @@ separate on purpose:
 | `.glass-table` (1.14) | Comparison tables (plan matrix, spec sheet) inside a section | — |
 | `.glass-badge--warning` (1.18) | A third tone for "beta", "limited", "pending" chips | — |
 | `.glass-avatar` (early) | Real team photos (`<img>` inside, `object-fit: cover`), neutral initials on glass | LUMEN's `.glw-avatar`: initials on a filled brand gradient, a different look rather than a variant — swap to `.glass-avatar` when a project brings photos |
-| `.glass-segmented` (1.15) | A small exclusive choice in content, e.g. monthly / yearly pricing | The hero's audience switch `.glw-seg`: its two long labels wrap inside the pill on narrow phones, while `.glass-segmented` keeps items on one line — at 320 px the second option would run past the edge. The language pill `.glw-lang` is made of **links** (`aria-current`), and `.glass-segmented` styles only `aria-pressed` buttons |
+| `.glass-segmented` (1.15) | A small exclusive choice in content, e.g. monthly / yearly pricing. `--droplet` (1.27) adds the iOS-26 fluid selection; its motion comes from the optional module: `import { attachDroplets } from '@jungherz-de/glasskit/glasskit-droplet.js'` in site.js, then `attachDroplets()` — without it the row keeps its plain look | The hero's audience switch `.glw-seg`: its two long labels wrap inside the pill on narrow phones, while `.glass-segmented` keeps items on one line — at 320 px the second option would run past the edge, droplet or not. The language pill `.glw-lang` is made of **links** (`aria-current`), and `.glass-segmented` styles only `aria-pressed` buttons |
 | `.glass-steps` (1.15) | Progress through a multi-step form | The `Process` section (`.glw-steps`): a marketing sequence of cards, not a progress state |
 | `.glass-empty` (1.15) | Empty states, e.g. a blog filter with no hits | The 404 page: an editorial text page with two actions |
 | `.glass-toast` + `__action` / `__close` (1.19) | JS-driven transient notices | Form results: `Contact` keeps the inline `glass-status` next to the form — it persists and needs no JS to be read |
