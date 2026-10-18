@@ -17,8 +17,11 @@
    Seit GlassKit 1.24 kommen die Oberflächen-Presets (data-surface="solid" |
    "tint") dazu: Ohne data-theme griffe sonst der Glas-Spiegel, deshalb trägt
    der Spiegel auch GlassKits Light-Blöcke der Presets — der Guard vergleicht
-   sie vollständig. Ein Projekt mit festem data-theme am <html> (z. B. nur
-   Dark) braucht keinen Spiegel — dann meldet der Guard das und ist zufrieden.
+   sie vollständig. Dasselbe gilt für die Markendatei: Was brand.css nur für
+   [data-theme="light"] setzt, muss auch in ihrem No-JS-Block stehen, sonst
+   gilt ohne JavaScript der Dark-Wert aus :root. Ein Projekt mit festem
+   data-theme am <html> (z. B. nur Dark) braucht keinen Spiegel — dann meldet
+   der Guard das und ist zufrieden.
    Aufruf: npm run check:tokens   (läuft auch als Teil von npm test)
    ============================================================ */
 
@@ -29,6 +32,7 @@ import { dirname, resolve } from 'node:path';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GLASSKIT = resolve(root, 'node_modules/@jungherz-de/glasskit/glasskit.css');
 const SITE = resolve(root, 'src/styles/site.css');
+const BRAND = resolve(root, 'src/styles/brand.css');
 const LAYOUTS = resolve(root, 'src/layouts');
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -58,7 +62,7 @@ function rulesOf(css) {
 function tokensOf(body) {
   const out = new Map();
   for (const decl of body.split(';')) {
-    const m = decl.match(/^\s*(--gl-[\w-]+)\s*:\s*([\s\S]+)$/);
+    const m = decl.match(/^\s*(--glw?-[\w-]+)\s*:\s*([\s\S]+)$/);
     if (m) out.set(m[1], m[2].replace(/\s+/g, ' ').trim());
   }
   return out;
@@ -189,7 +193,34 @@ for (const preset of PRESETS) {
   } else presetSummary.push(`${preset.label.replace('Preset ', '')} ${mine.size}`);
 }
 
-if (missing.length || wrong.length || unknown.length || presetProblems) {
+// brand.css: Werte nur für [data-theme="light"] brauchen ihren No-JS-Zwilling
+let brandProblems = 0;
+let brandLightCount = 0;
+if (existsSync(BRAND)) {
+  const lightBrand = new Map();
+  const nojsBrand = new Map();
+  for (const [sel, body] of rulesOf(stripComments(readFileSync(BRAND, 'utf8')))) {
+    if (MEDIA.test(sel)) {
+      for (const [s, b] of rulesOf(body)) if (s === ':root:not([data-theme])') for (const [k, v] of tokensOf(b)) nojsBrand.set(k, v);
+    } else if (parts(sel).includes('[data-theme="light"]')) {
+      for (const [k, v] of tokensOf(body)) lightBrand.set(k, v);
+    }
+  }
+  brandLightCount = lightBrand.size;
+  const bMissing = [...lightBrand].filter(([k]) => !nojsBrand.has(k));
+  const bWrong = [...lightBrand].filter(([k, v]) => nojsBrand.has(k) && nojsBrand.get(k) !== v);
+  if (bMissing.length || bWrong.length) {
+    brandProblems = bMissing.length + bWrong.length;
+    console.error(`\n✗ brand.css setzt ${token(brandProblems)} für [data-theme="light"], ohne ${verb(brandProblems, 'ihn', 'sie')} im No-JS-Block gleich zu setzen.`);
+    console.error('  Ohne JavaScript (und beim Drucken ohne JS) gilt dort sonst der Dark-Wert aus :root.');
+    console.error('  In brand.css so führen:\n');
+    console.error('  @media (prefers-color-scheme: light), print {\n    :root:not([data-theme]) {');
+    for (const [k, v] of lightBrand) console.error(`  ${line(k, v)}`);
+    console.error('    }\n  }');
+  }
+}
+
+if (missing.length || wrong.length || unknown.length || presetProblems || brandProblems) {
   console.error('\n  Referenz: SKILL.md §3 (Theme, Presets) und §7 (Updates).\n');
   process.exit(1);
 }
@@ -199,5 +230,6 @@ console.log(
     `${mirror.size - redundant.length} abweichende Token gespiegelt` +
     (redundant.length ? `, ${redundant.length} überzählig (Light = Dark, unschädlich)` : '') +
     (presetSummary.length ? `; Presets ${presetSummary.join(' + ')} Token` : '') +
+    (brandLightCount ? `; brand.css: ${brandLightCount} Light-Token mit No-JS-Zwilling` : '') +
     '.'
 );

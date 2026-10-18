@@ -16,6 +16,11 @@
       setzt davor den Skip-Link. Ein <main> in einer Seite oder Komponente
       ergäbe ein zweites, verschachteltes — ungültig und für Screenreader
       doppelt.
+   3. Icons in Primary-Buttons. GlassKit füllt sie (fill, stroke-width 0).
+      Offene Linien — ein Pfad ohne z, <line>, <polyline> — haben keine
+      Fläche: Sie verschwinden oder werden zu Dreiecken (ein Download-Pfeil
+      neben dem wichtigsten CTA). Überlagerte geschlossene Formen erkennt
+      die Regel nicht — die bleiben ein Fall für den Blick (SKILL.md §4).
 
    Aufruf: npm run check:markup   (läuft auch als Teil von npm test)
    ============================================================ */
@@ -92,7 +97,31 @@ for (const [file, src] of text) {
   }
 }
 
-if (classProblems.length || landmarkProblems.length) {
+// 3. Icons in Primary-Buttons: jede Teilform muss geschlossen sein
+const iconProblems = [];
+let primaryIcons = 0;
+const PRIMARY = /<(button|a|span)\b[^>]*\bclass=(?:"[^"]*\bglass-btn--primary\b[^"]*"|'[^']*\bglass-btn--primary\b[^']*')[^>]*>/g;
+for (const [file, src] of text) {
+  for (const m of src.matchAll(PRIMARY)) {
+    const close = src.indexOf(`</${m[1]}>`, m.index);
+    const inner = src.slice(m.index, close === -1 ? undefined : close);
+    const svg = inner.match(/<svg[\s\S]*?<\/svg>/);
+    if (!svg) continue;
+    primaryIcons++;
+    const open = [];
+    if (/<(line|polyline)\b/.test(svg[0])) open.push('<line>/<polyline>');
+    for (const d of svg[0].matchAll(/<path\b[^>]*\sd="([^"]+)"/g)) {
+      for (const sp of d[1].split(/(?=[Mm])/).map((x) => x.trim()).filter(Boolean)) {
+        if (!/[zZ]$/.test(sp)) open.push(`„${sp.length > 18 ? sp.slice(0, 18) + '…' : sp}"`);
+      }
+    }
+    if (open.length) {
+      iconProblems.push(`    ${relative(root, file)}:${lineOf(src, m.index)}  offen: ${open.slice(0, 3).join(', ')}${open.length > 3 ? ' …' : ''} → gefülltes Icon (geschlossene Formen) oder keins`);
+    }
+  }
+}
+
+if (classProblems.length || landmarkProblems.length || iconProblems.length) {
   if (classProblems.length) {
     console.error('\n✗ Override-Klassen ohne ihre GlassKit-Basis:\n');
     console.error(classProblems.join('\n'));
@@ -104,11 +133,15 @@ if (classProblems.length || landmarkProblems.length) {
     console.error(landmarkProblems.join('\n'));
     console.error('\n  Jede Seite braucht genau ein <main> — das aus der BaseLayout, mit dem Skip-Link davor.');
   }
+  if (iconProblems.length) {
+    console.error('\n✗ Icons in Primary-Buttons mit offenen Linien — GlassKit füllt sie, die Linien verschwinden:\n');
+    console.error(iconProblems.join('\n'));
+  }
   console.error('\n  Hintergrund: SKILL.md §3 (Landmarks), §4 (Regeln) und §7 (Updates).\n');
   process.exit(1);
 }
 
 console.log(
   `✓ Markup: ${checked} Override-Vorkommen mit GlassKit-Basis, <main> nur aus dem Layout, ` +
-    `Skip-Link vorhanden (GlassKit ${version}).`
+    `Skip-Link vorhanden, ${primaryIcons} ${primaryIcons === 1 ? 'Icon' : 'Icons'} in Primary-Buttons geschlossen (GlassKit ${version}).`
 );

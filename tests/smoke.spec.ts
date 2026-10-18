@@ -139,6 +139,39 @@ test('Landmarks: jede Seite hat genau ein <main>, Header und Footer liegen auße
   }
 });
 
+test('Header-CTA: ein Link je Zielgruppe, unter 900 px im Menü statt im Header', async ({ page }) => {
+  await page.goto('');
+  const cta = page.locator('.glw-header__cta.only-b2c');
+  if (test.info().project.name === 'mobile') {
+    // Als Link schlug GlassKits a.glass-btn die Ausblendregel — der CTA blieb stehen
+    // und schob den Menü-Button aus dem Bild (Issue #18)
+    await expect(cta).toBeHidden();
+    const toggle = await page.locator('.glw-mobilenav__toggle').boundingBox();
+    expect(toggle!.x + toggle!.width).toBeLessThanOrEqual(390);
+  } else {
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute('href', /#preise$/);
+    await page.locator('[data-audience-btn="b2b"]').click();
+    await expect(page.locator('.glw-header__cta.only-b2b')).toBeVisible();
+    await expect(page.locator('.glw-header__cta.only-b2b')).toHaveAttribute('href', /#kontakt$/);
+  }
+});
+
+test('Akzent-Text folgt --gl-color-primary-text, Verlaufsschrift ihren Stellschrauben', async ({ page }) => {
+  // Eine Marke mit dunkler Primärfarbe hellt Akzent-Text im Dark-Theme auf (Issue #19, brand.css)
+  await page.goto('');
+  await page.addStyleTag({ content: ':root { --gl-color-primary-text: rgb(1, 2, 3); --glw-gradient-text-from: rgb(4, 5, 6); --glw-gradient-text-to: rgb(7, 8, 9); }' });
+  for (const sel of ['.glw-eyebrow', '.glw-step__num', '.glw-quote__mark', '.glw-footer__bottom a', '.glw-contact .glass-checkbox__label a']) {
+    await expect(page.locator(sel).first(), sel).toHaveCSS('color', 'rgb(1, 2, 3)');
+  }
+  await expect(page.locator('.glw-microtrust svg').first()).toHaveCSS('stroke', 'rgb(1, 2, 3)');
+  for (const sel of ['.glw-display .glw-glint', '.glw-stat__num', '.glw-case__metric']) {
+    await expect(page.locator(sel).first(), sel).toHaveCSS('background-image', /rgb\(4, 5, 6\).*rgb\(7, 8, 9\)/);
+  }
+  // Flächen bleiben Primary: Buttons ändern sich nicht
+  await expect(page.locator('.glass-btn--primary').first()).not.toHaveCSS('background-image', /rgb\(1, 2, 3\)/);
+});
+
 test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand', async ({ page }) => {
   await page.goto('');
   const status = page.locator('#contactStatus');

@@ -8,11 +8,16 @@
 
    Regeln:
    - Ausschließlich --gl-*-Tokens überschreiben, keine Selektoren
-     der Komponenten anfassen.
+     der Komponenten anfassen. Einzige Ausnahme: die dokumentierten
+     Stellschrauben des Website-Layers, --glw-gradient-text-from /
+     --glw-gradient-text-to (Verlaufsschrift, siehe unten).
    - Ein :root-Block genügt für Dark UND Light (brand.css lädt
      zuletzt und gewinnt die Kaskade gegen beide Theme-Blöcke).
+   - Seit GlassKit 1.11 genügen für die Markenfarbe zwei Zeilen:
+     Gradient-Mitte, warmer Rand, Fokusring und Button-Glow werden
+     aus --gl-color-primary gemischt. Nur setzen, was abweichen soll.
    - Wer pro Theme unterschiedliche Werte braucht, ergänzt die
-     auskommentierten Blöcke unten.
+     auskommentierten Blöcke unten — immer mit No-JS-Block.
    - Kontrast prüfen: Primary muss auf beiden Gründen funktionieren
      (Dark-Teal und Light-Grau) — im Zweifel Light-Variante dunkler.
    ============================================================ */
@@ -20,46 +25,79 @@
 
 /* ============================================================
    BEISPIEL: Theme "Ocean Blue" — zum Aktivieren auskommentieren
+   Der warme Hintergrund-Glow ist nicht abgeleitet (Deko des
+   Grunds) und wird deshalb mit umgefärbt.
    ============================================================ */
 
 /*
 :root {
   --gl-color-primary:        #007AFF;
   --gl-color-primary-dark:   #0055CC;
-  --gl-color-primary-mid:    #0066E0;
-
-  --gl-border-warm:          rgba(0, 122, 255, 0.35);
-  --gl-border-focus:         rgba(0, 122, 255, 0.60);
-
-  --gl-shadow-btn-primary:   0 6px 24px rgba(0, 100, 220, 0.35),
-                             0 2px 8px rgba(0, 0, 0, 0.15);
-  --gl-shadow-focus:         0 0 0 3px rgba(0, 122, 255, 0.3);
-
   --gl-bg-warm-glow:         rgba(0, 122, 255, 0.10);
 }
 */
 
 
 /* ============================================================
-   OPTIONAL: Abweichende Werte pro Theme
+   BEISPIEL: Dunkle Primärfarbe — Akzent-Text im Dark-Theme aufhellen
+
+   Eine Primärfarbe, die für weiße Button-Schrift abgedunkelt ist
+   (z. B. #c25028), ist als Text auf dem dunklen Grund zu dunkel.
+   Die Buttons behalten sie; Akzent-Text (Eyebrows, Links, Schritt-
+   Nummern, Fokusring — --gl-color-primary-text, GlassKit ≥ 1.26)
+   und die Verlaufsschriften (Glint, Kennzahlen) werden im Dark-
+   Theme aufgehellt. Gemessen mit #c25028 auf dem Standard-Dark-
+   Grund: Akzent-Text 4,98–12,6:1 statt 1,35–3,41:1, Glint
+   5,3 → 7,2:1 statt 2,2 → 1,5:1.
+
+   Alle drei Blöcke sind nötig: :root trifft auch eine helle Seite,
+   deshalb folgt die Light-Regel danach — und ohne JavaScript fehlt
+   data-theme, das übernimmt der No-JS-Block (auch beim Drucken).
    ============================================================ */
 
 /*
+:root, [data-theme="dark"] {
+  --gl-color-primary-text:   color-mix(in srgb, var(--gl-color-primary) 18%, #ffffff);
+  --glw-gradient-text-from:  color-mix(in srgb, var(--gl-color-primary) 45%, #ffffff);
+  --glw-gradient-text-to:    color-mix(in srgb, var(--gl-color-primary) 25%, #ffffff);
+}
 [data-theme="light"] {
-  --gl-color-primary:        #0062cc;   Light-Grund braucht oft mehr Kontrast
+  --gl-color-primary-text:   var(--gl-color-primary);
+  --glw-gradient-text-from:  var(--gl-color-primary);
+  --glw-gradient-text-to:    var(--gl-color-primary-dark);
+}
+@media (prefers-color-scheme: light), print {
+  :root:not([data-theme]) {
+    --gl-color-primary-text:   var(--gl-color-primary);
+    --glw-gradient-text-from:  var(--gl-color-primary);
+    --glw-gradient-text-to:    var(--gl-color-primary-dark);
+  }
 }
 */
 
 
 /* ============================================================
-   OPTIONAL: No-JS-Fallback (OS-Präferenz hell, ohne data-theme)
-   Nur nötig, wenn oben ein [data-theme="light"]-Block existiert —
-   dieselben Werte hier spiegeln, damit auch ohne JavaScript das
-   richtige Branding erscheint.
+   OPTIONAL: Abweichende Werte pro Theme
+   Der helle Grund braucht oft eine dunklere Primärfarbe.
    ============================================================ */
 
 /*
-@media (prefers-color-scheme: light) {
+[data-theme="light"] {
+  --gl-color-primary:        #0062cc;
+}
+*/
+
+
+/* ============================================================
+   OPTIONAL: No-JS-Fallback (OS-Präferenz hell oder Druck, ohne
+   data-theme). Nötig, sobald oben ein [data-theme="light"]-Block
+   existiert — dieselben Werte hier spiegeln, damit auch ohne
+   JavaScript das richtige Branding erscheint.
+   npm run check:tokens meldet, wenn hier ein Wert fehlt.
+   ============================================================ */
+
+/*
+@media (prefers-color-scheme: light), print {
   :root:not([data-theme]) {
     --gl-color-primary:      #0062cc;
   }

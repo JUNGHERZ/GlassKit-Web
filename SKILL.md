@@ -71,9 +71,12 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
                         runs both — first step of `npm test` and its own CI step:
                         check-light-mirror.mjs (`check:tokens`) diffs the no-JS light
                         mirror (§3), including its surface-preset rules, against
-                        GlassKit and prints the lines to add or replace; check-markup.mjs (`check:markup`) finds glw override
-                        classes whose GlassKit base class is missing in the markup (§4)
-                        and any `<main>` outside the layout (§3 Landmarks).
+                        GlassKit and prints the lines to add or replace — and checks
+                        that every value brand.css sets for the light theme has its
+                        no-JS twin; check-markup.mjs (`check:markup`) finds glw override
+                        classes whose GlassKit base class is missing in the markup (§4),
+                        any `<main>` outside the layout (§3 Landmarks) and open lines in
+                        icons of primary buttons (§4).
                         Project-neutral tooling — derived projects take them as-is (§7).
 ```
 
@@ -81,8 +84,8 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
 
 | Component | Purpose | Notes |
 |---|---|---|
-| `SiteHeader` | Fixed glass nav: brand, anchors, theme toggle, CTA, mobile menu | Rendered by BaseLayout. Nav links exist TWICE: desktop `.glw-nav` and the `<details id="mobileNav">` overlay panel — always update both. Mobile menu opens/closes natively without JS (details/summary); site.js adds focus trap, ESC, scroll lock |
-| `Hero` | Audience switch + headline pair + CTAs + decorative device panel | The device panel is a mini component showcase (aria-hidden); swap its content to match the product. 3D tilt is OPT-IN: `glw-hero__visual--tilt` + `data-tilt` on the visual (default ON in the demo; remove both for a flat panel) |
+| `SiteHeader` | Fixed glass nav: brand, anchors, theme toggle, CTA, mobile menu | Rendered by BaseLayout. Nav links exist TWICE: desktop `.glw-nav` and the `<details id="mobileNav">` overlay panel — always update both. Mobile menu opens/closes natively without JS (details/summary); site.js adds focus trap, ESC, scroll lock. The CTA is one link per audience (`.only-b2c` → pricing, `.only-b2b` → contact), in the header and again in the menu; below 900 px the header one hides via `.glass-btn.glw-header__cta` (§4: two classes) |
+| `Hero` | Audience switch + headline pair + CTAs + decorative device panel | The device panel is a mini component showcase (aria-hidden); swap its content to match the product. 3D tilt is OPT-IN: `glw-hero__visual--tilt` + `data-tilt` on the visual (default ON in the demo; remove both for a flat panel). Icons in the primary buttons are filled glyphs — keep them filled when swapping them (§4) |
 | `HeroEditorial` | ALTERNATIVE hero: typographic, single-column, no device panel | For service providers/agencies without a product UI (fastest LCP). Swap for `Hero` in index.astro; ships without the audience switch (add `.only-*` pairs if needed). Services badges + stat line are placeholders |
 | `LogoStrip` | Social proof wordmarks | Text-only, styled via `glw-wordmark--*` variants |
 | `Features` | 3-column glass card grid | Edit the `features[]` array (icon = inline outline SVG string, 24 viewBox) |
@@ -196,6 +199,16 @@ media query is `(prefers-color-scheme: light), print`, so a page printed without
 JS is light too. A project that pins `data-theme` on `<html>` (one theme by brand
 decision) needs no mirror — delete the block there; the guard sees the pinned
 attribute and passes.
+
+**Brand colours:** brand.css overrides tokens only. Since GlassKit 1.11 two lines
+carry a brand (`--gl-color-primary`, `--gl-color-primary-dark`); mid tone, warm
+border, focus glow and button glow are mixed from them. A primary dark enough for
+white button text is too dark as text on the dark theme — brand.css carries the
+recipe: accent text at 18 % primary on white, gradient text 45 % → 25 % (measured
+with `#c25028` on the default dark ground: 4.98–12.6:1 instead of 1.35–3.41:1).
+Every value brand.css sets for `[data-theme="light"]` needs its twin in brand.css's
+no-JS block, or the dark value applies without JS — `npm run check:tokens` names
+any that is missing.
 
 **GlassKit presets:** `data-surface="solid"` (opaque surfaces, no blur, GlassKit
 1.24) and `data-surface="tint"` (see-through tints of the text colour for a page
@@ -325,7 +338,9 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - Import order in BaseLayout: `@jungherz-de/glasskit/glasskit.css` **before** `../styles/site.css`.
 - Keep the bootstrap script as `<script is:inline>` in `<head>` (it must run before first paint).
 - Build every page/anchor link with `href()` from `src/data/site.ts`: `href('/#preise')`, `href('/impressum/')` — subpage links with trailing slash. Inside a language branch include the prefix: `href('/en/#pricing')`.
-- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink.
+- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink. Accent drawn straight onto page or glass — eyebrows, links, step numbers, line icons, list markers, the focus ring — uses `var(--gl-color-primary-text, var(--gl-color-primary))` (GlassKit 1.26); fills, tints and glows keep `--gl-color-primary`. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to` (default primary → primary-dark) — the only site-layer hooks brand.css may set.
+- Icons in `.glass-btn--primary` are filled: GlassKit fills them (`stroke-width: 0`). Draw them as closed shapes (holes with `fill-rule="evenodd"`) or leave them out; outline icons belong in secondary and tertiary buttons. `npm run check:markup` flags open lines; overlapping closed shapes (a lens drawn inside a camera body) still need a look.
+- A glw rule that sets `display` on an element carrying `.glass-btn` needs both classes (`.glass-btn.glw-…`): once the element is a link, GlassKit's `a.glass-btn { display: inline-flex }` (0,1,1) beats a single class.
 - Running text (rendered Markdown, legal pages) sits in a `glass-prose glw-prose` container. Do not restate what `.glass-prose` already styles; add to `.glw-prose` only what the site wants differently.
 - When GlassKit ships a component the glw layer already has, build on it the same way: markup carries both classes (`glass-x glw-x`), site.css keeps only the deviations, and the pair goes into `PAIRS` in `scripts/check-markup.mjs` — derived projects take site.css wholesale but never their markup (§7), and the guard tells them where the base class is missing. Adopt only without regression; measure narrow viewports first (§2c names the cases that stay separate and why).
 - Stacking: since GlassKit 1.15.1 `.glass-bg` is one isolated stacking context and its children (header, sections, footer) no longer form their own — every `z-index` on the page competes with every other. The header sits at 50 (mobile panel and language menu live inside it). Keep section content below 50, avoid negative `z-index` (it now resolves against `.glass-bg` and its aurora decoration), and give anything that must cover the header (cookie banner, overlay) a deliberate ≥ 100.
@@ -458,6 +473,10 @@ quietly — that is what the guards are for.
      `--gl-shadow-focus` follow `--gl-color-primary` by themselves — manual
      overrides of these can usually go. Since 1.7.0 badge ink has its own
      tokens (`--gl-color-*-on-surface`).
+   - Icons in the project's own primary buttons: `npm run check:markup` flags
+     open lines; look at the rest (GlassKit fills these icons, §4).
+   - A dark brand primary: take the accent-text recipe from the template's
+     brand.css (§3 Brand colours).
    - Tests that click the visual part of a GlassKit control
      (`.glass-checkbox__box`, a toggle track, a radio circle): since GlassKit
      1.20 the invisible input lies on top — tick by role instead (§3 testing note).

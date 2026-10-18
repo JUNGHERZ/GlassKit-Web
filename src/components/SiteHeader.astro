@@ -32,10 +32,11 @@ const { translated = true } = Astro.props;
         <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
         <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.4"></circle><path d="M12 2.5v2.4M12 19.1v2.4M4.3 4.3l1.7 1.7M18 18l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.3 19.7 6 18M18 6l1.7-1.7"></path></svg>
       </button>
-      <button class="glass-btn glass-btn--primary glass-btn--sm glass-btn--auto glw-header__cta" type="button">
-        <span class="only-b2c">Kostenlos starten</span>
-        <span class="only-b2b">Demo vereinbaren</span>
-      </button>
+      {/* CTA als Link je Zielgruppe, wie in abgeleiteten Projekten. Unter
+          900 px wandert er ins Mobilmenü — dafür sorgt .glass-btn.glw-header__cta
+          in site.css (zwei Klassen, weil a.glass-btn sonst gewinnt). */}
+      <a class="glass-btn glass-btn--primary glass-btn--sm glass-btn--auto glw-header__cta only-b2c" href={href('/#preise')}>Kostenlos starten</a>
+      <a class="glass-btn glass-btn--primary glass-btn--sm glass-btn--auto glw-header__cta only-b2b" href={href('/#kontakt')}>Demo vereinbaren</a>
 
       {/* Mobile-Navigation: <details> klappt nativ ohne JS auf/zu;
           site.js ergänzt Fokus-Trap, ESC, Scroll-Lock und Auto-Schließen. */}
@@ -52,10 +53,8 @@ const { translated = true } = Astro.props;
             <a href={href('/blog/')}>Blog</a>
             <a href={href('/#kontakt')}>Kontakt</a>
           </nav>
-          <button class="glass-btn glass-btn--primary" type="button">
-            <span class="only-b2c">Kostenlos starten</span>
-            <span class="only-b2b">Demo vereinbaren</span>
-          </button>
+          <a class="glass-btn glass-btn--primary only-b2c" href={href('/#preise')}>Kostenlos starten</a>
+          <a class="glass-btn glass-btn--primary only-b2b" href={href('/#kontakt')}>Demo vereinbaren</a>
         </div>
       </details>
     </div>

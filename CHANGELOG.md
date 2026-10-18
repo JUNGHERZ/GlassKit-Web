@@ -10,6 +10,36 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.4.0] – 2026-10-18
+
+### Fixed
+
+- **Icons in primary buttons render as icons ([#17](https://github.com/JUNGHERZ/GlassKit-Web/issues/17)).** GlassKit fills icons in `.glass-btn--primary` by design (`fill`, `stroke-width: 0`), and the hero's outline icons lost their strokes: the download arrow became a small triangle, the calendar a solid block, the camera in the device panel a silhouette without its lens. They are filled glyphs now, DE and EN — an arrow over a tray, a calendar with rings and header band, a camera with the lens cut out (`fill-rule="evenodd"`). The editorial hero's speech bubble is a closed shape and was already right. The markup guard gains a third rule: icons in primary buttons must consist of closed shapes, and it names every open line with file and line — against the old hero it reports all four outline icons. Overlapping closed shapes, like the old camera, still need a look.
+- **The header CTA hides below 900 px when it is a link ([#18](https://github.com/JUNGHERZ/GlassKit-Web/issues/18)).** `.glw-header__cta { display: none }` (0,1,0) lost to GlassKit's `a.glass-btn { display: inline-flex }` (0,1,1) as soon as a site made its CTA a link: it stayed in the header and pushed the menu button off screen. The rule is `.glass-btn.glw-header__cta` now. The template's own CTA was a `<button>` without any action; it is one link per audience now (B2C → pricing, B2B → contact), in the header and in the menu, so the demo exercises the case. At 390 px the menu button sits at 324–370 px, the issue's figures; the header (DE/EN × dark/light × B2C/B2B) and the open menu render pixel-identical to before. A smoke test checks both widths and fails against the old rule.
+- **Accent text follows `--gl-color-primary-text` ([#19](https://github.com/JUNGHERZ/GlassKit-Web/issues/19)).** Eyebrows, links, step numbers, list markers, line icons and the focus ring took `--gl-color-primary` — the button fill, which a brand darkens for white button text. They read `var(--gl-color-primary-text, var(--gl-color-primary))` now (14 rules); fills, tints and glows keep the primary. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to`, by default primary → primary-dark. With the default palette nothing changes (computed-style protocol: 0 differences). Measured with `#c25028` on the default dark ground, text hidden and the background behind it sampled: eyebrow, step number, quote mark, footer link and consent link at 1.35–3.41:1 and the glint at 2.16 → 1.52:1 without the recipe below, 4.98–12.6:1 and 5.32 → 7.19:1 with it. A smoke test sets the tokens and checks every rule follows them.
+
+### Changed
+
+- **GlassKit `^1.25.0` → `^1.26.0`**, which adds `--gl-color-primary-text` (the primary as text) and `--gl-tab-bar-active-color` (JUNGHERZ/GlassKit#12). Both themes declare the new token as `var(--gl-color-primary)`, so the light mirror needs nothing new and the demo renders identically: 0 differences in 8,982 elements.
+
+### Added
+
+- **A brand.css recipe for a dark primary**: three blocks — lighter accent and gradient text in the dark theme, the primary again in the light theme, and the no-JS block (which also covers printing). The "Ocean Blue" example is down to the two lines GlassKit needs since 1.11, plus the warm background glow, which is not derived. The explanatory notes moved out of the commented CSS: uncommented, a sentence inside a block would have swallowed the declaration after it.
+- **The token guard checks brand.css:** every value it sets for `[data-theme="light"]` needs an identical twin in its no-JS block, or the dark value applies without JavaScript. The three Mona projects pass — 4, 14 and 6 light values, all twinned.
+
+### For derived projects
+
+- Take `src/styles/site.css`, `scripts/` and `SKILL.md`, bump GlassKit to `^1.26.0`, run `npm run check`. If the 1.3.0 sync is still open, its notes apply first (one test line per project).
+- Header CTAs that are links hide below 900 px with the new site.css — no markup change needed.
+- Components are not synced, so check the icons in your own primary buttons: the guard flags open lines (all five pass today). A hero still carrying the template's original icons takes the filled ones from `src/components/Hero.astro`.
+- A dark brand primary takes the recipe from the template's brand.css, all three blocks; the guard checks the no-JS twins.
+
+### Template state at 1.4.0
+
+Astro 5 · GlassKit ^1.26.0 · accent text on `--gl-color-primary-text` with gradient-text hooks · filled icons in primary buttons, guarded · header CTAs as links · everything else as at 1.3.0.
+
+---
+
 ## [1.3.0] – 2026-10-18
 
 ### Changed

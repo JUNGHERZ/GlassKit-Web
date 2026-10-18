@@ -23,8 +23,15 @@ body { margin: 0; }
 
 ::selection { background: color-mix(in srgb, var(--gl-color-primary) 35%, transparent); }
 
+/* Akzentfarben: --gl-color-primary ist die Fläche (Buttons, Tönungen, Glows).
+   Als Text, Linien-Icon oder Fokusring direkt auf Seite und Glas steht
+   --gl-color-primary-text (GlassKit ≥ 1.26, ohne eigenen Wert = Primary).
+   Die Verlaufsschriften (Glint, Kennzahlen, Case-Metriken) laufen von
+   --glw-gradient-text-from nach --glw-gradient-text-to, ohne eigene Werte
+   Primary → Primary-dark. Eine Marke mit dunkler Primärfarbe hellt beides im
+   Dark-Theme auf — Rezept in brand.css. */
 :focus-visible {
-  outline: 2px solid var(--gl-color-primary);
+  outline: 2px solid var(--gl-color-primary-text, var(--gl-color-primary));
   outline-offset: 3px;
 }
 
@@ -204,7 +211,7 @@ body { margin: 0; }
   font-weight: var(--gl-font-weight-semibold);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gl-color-primary);
+  color: var(--gl-color-primary-text, var(--gl-color-primary));
   margin: 0 0 14px;
 }
 
@@ -305,7 +312,9 @@ body { margin: 0; }
 
 @media (max-width: 900px) {
   .glw-nav { display: none; }
-  .glw-header__cta { display: none; } /* CTA wandert ins Mobile-Menü */
+  /* CTA wandert ins Mobile-Menü. Zwei Klassen: Als Link schlägt sonst
+     GlassKits a.glass-btn { display: inline-flex } (0,1,1) die Regel. */
+  .glass-btn.glw-header__cta { display: none; }
 }
 
 /* ---- 2b. Mobile-Navigation (details/summary) ------------------ */
@@ -358,7 +367,7 @@ body { margin: 0; }
   border-bottom: 1px solid var(--gl-border-subtle);
 }
 
-.glw-mobilenav__panel nav a:active { color: var(--gl-color-primary); }
+.glw-mobilenav__panel nav a:active { color: var(--gl-color-primary-text, var(--gl-color-primary)); }
 
 .glw-mobilenav__panel .glass-btn { margin-top: 28px; }
 
@@ -559,7 +568,8 @@ body { margin: 0; }
 }
 
 .glw-display .glw-glint {
-  background: linear-gradient(105deg, var(--gl-color-primary) 0%, var(--gl-color-primary-dark) 90%);
+  background: linear-gradient(105deg, var(--glw-gradient-text-from, var(--gl-color-primary)) 0%,
+    var(--glw-gradient-text-to, var(--gl-color-primary-dark)) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -597,7 +607,7 @@ body { margin: 0; }
 
 .glw-microtrust svg {
   width: 15px; height: 15px;
-  stroke: var(--gl-color-primary);
+  stroke: var(--gl-color-primary-text, var(--gl-color-primary));
   fill: none;
   stroke-width: 2;
   stroke-linecap: round;
@@ -824,7 +834,7 @@ body { margin: 0; }
 
 .glw-feature__icon svg {
   width: 22px; height: 22px;
-  stroke: var(--gl-color-primary);
+  stroke: var(--gl-color-primary-text, var(--gl-color-primary));
   fill: none;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -993,7 +1003,7 @@ body { margin: 0; }
   border-color: var(--gl-border-warm);
 }
 
-.glw-window__rail .glass-pill.is-active svg { stroke: var(--gl-color-primary); }
+.glw-window__rail .glass-pill.is-active svg { stroke: var(--gl-color-primary-text, var(--gl-color-primary)); }
 
 .glw-post__head {
   display: flex;
@@ -1245,7 +1255,8 @@ body { margin: 0; }
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(115deg, var(--gl-color-primary) 0%, var(--gl-color-primary-dark) 100%);
+  background: linear-gradient(115deg, var(--glw-gradient-text-from, var(--gl-color-primary)) 0%,
+    var(--glw-gradient-text-to, var(--gl-color-primary-dark)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1371,7 +1382,7 @@ body { margin: 0; }
   font-family: 'New York', Georgia, 'Times New Roman', serif;
   font-size: 64px;
   line-height: 0.5;
-  color: var(--gl-color-primary);
+  color: var(--gl-color-primary-text, var(--gl-color-primary));
   display: block;
   margin-bottom: 22px;
 }
@@ -1484,7 +1495,7 @@ body { margin: 0; }
   transition: opacity 0.2s ease, color 0.2s ease;
 }
 
-.glw-footer__links a:hover { opacity: 1; color: var(--gl-color-primary); }
+.glw-footer__links a:hover { opacity: 1; color: var(--gl-color-primary-text, var(--gl-color-primary)); }
 
 .glw-footer__news p {
   font-size: 14px;
@@ -1511,7 +1522,7 @@ body { margin: 0; }
   color: var(--gl-color-text-muted);
 }
 
-.glw-footer__bottom a { color: var(--gl-color-primary); text-decoration: none; }
+.glw-footer__bottom a { color: var(--gl-color-primary-text, var(--gl-color-primary)); text-decoration: none; }
 .glw-footer__bottom a:hover { text-decoration: underline; }
 
 @media (max-width: 860px) {
@@ -1556,7 +1567,7 @@ html:not(.js) .glass-accordion__content { max-height: none; }
   font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--gl-color-primary);
+  color: var(--gl-color-primary-text, var(--gl-color-primary));
 }
 
 .glw-step h3 {
@@ -1624,7 +1635,8 @@ html:not(.js) .glass-accordion__content { max-height: none; }
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(115deg, var(--gl-color-primary) 0%, var(--gl-color-primary-dark) 100%);
+  background: linear-gradient(115deg, var(--glw-gradient-text-from, var(--gl-color-primary)) 0%,
+    var(--glw-gradient-text-to, var(--gl-color-primary-dark)) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1684,7 +1696,7 @@ html:not(.js) .glass-accordion__content { max-height: none; }
   transition: color 0.2s ease;
 }
 
-.glw-post-card h2 a:hover { color: var(--gl-color-primary); }
+.glw-post-card h2 a:hover { color: var(--gl-color-primary-text, var(--gl-color-primary)); }
 
 .glw-post-card p {
   font-size: 15px;
@@ -1699,7 +1711,7 @@ html:not(.js) .glass-accordion__content { max-height: none; }
   gap: 7px;
   font-size: 14.5px;
   font-weight: var(--gl-font-weight-semibold);
-  color: var(--gl-color-primary);
+  color: var(--gl-color-primary-text, var(--gl-color-primary));
   text-decoration: none;
 }
 
@@ -1751,7 +1763,7 @@ html:not(.js) .glass-accordion__content { max-height: none; }
   color: var(--gl-color-text-muted);
 }
 
-.glw-prose--article li::marker { color: var(--gl-color-primary); }
+.glw-prose--article li::marker { color: var(--gl-color-primary-text, var(--gl-color-primary)); }
 
 .glw-prose--article a { text-decoration: none; }
 
@@ -1797,7 +1809,7 @@ html:not(.js) .glass-accordion__content { max-height: none; }
 }
 
 .glw-contact .glass-checkbox__label a {
-  color: var(--gl-color-primary);
+  color: var(--gl-color-primary-text, var(--gl-color-primary));
   text-decoration: none;
 }
 
