@@ -10,6 +10,38 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.5.0] – 2026-10-27
+
+### Changed
+
+- **GlassKit `^1.27.0` → `^1.31.0`.** Four minor releases and a patch, measured as before (computed-style protocol over 8,905 elements on eight page types in dark, light, mobile and no-JS light, plus measured contrast and PDF prints). Most of it — tab bar, segmented control, steps, sheet dialog, flush lists — is not used by the template. What reaches it:
+  - **Text and icon contrast (1.31.0)**, the one visible change: muted text, card text and icons now meet WCAG AA by default. In the light theme muted text goes from 55 % to 68 % ink, card text from 60 % to 68 %, icons from 35 / 50 / 70 % to 55 / 65 / 80 %; in the dark theme muted text from 60 % to 65 %. Measured on the demo's own backgrounds, text hidden and the background sampled: in the light theme the section lead, footer text, feature text and FAQ answers go from 3.37–3.47:1 to 4.87–5.10:1; in the dark theme from 3.74–6.53:1 to 4.09–7.42:1. The protocol shows 5,860 differences in 450 patterns, all of them these colour transitions, the accordion and the button padding below — no rendered width or height changed outside the accordion.
+  - **The no-JS light mirror** takes the eight new light values (seven tokens and the select chevron); GlassKit's changelog names the mirror explicitly, and the token guard printed exactly these lines.
+  - **The accordion collapses with a grid now (1.30.0)** — `grid-template-rows` from `0fr` to `1fr` instead of a `max-height` capped at 500 px. The template's no-JS fallback, `max-height: none`, no longer reached it: without JavaScript every FAQ answer but the first was 0 px high. site.css now undoes both forms. The smoke test had not noticed, because it checked only the first answer — which is open in the markup anyway; it now checks every answer of the default view (B2B questions stay hidden without JavaScript, B2C is the default), and it fails against the old fallback.
+  - **Every button has 24 px inline padding (1.31.0)**, where buttons without `--auto` had the browser's 6 px. In the template these are full-width, so nothing moves; a button that takes its width from its text grows by 36 px.
+
+### Fixed
+
+- **The header prints once, at the top of page 1 ([#20](https://github.com/JUNGHERZ/GlassKit-Web/issues/20)).** Browsers repeat `position: fixed` on every printed page, so from page 2 on the header covered the content — on the privacy page its logo and menu button sat over the footer links. In print it is `position: absolute` now. The rule stands right after the `.glw-header` rule: placed next to the skip link's print rule, as first proposed, it lost to the later `position: fixed` of the same specificity, and the first print still showed the header on page 2. Checked by PDF, page by page: page 2 starts with the footer, page 1 is unchanged; the print smoke test checks the position.
+- **The token guard reads brand.css the way projects write it ([#21](https://github.com/JUNGHERZ/GlassKit-Web/issues/21)).** It matched selectors letter for letter, so `[data-theme='light']` in single quotes or a no-JS rule like `:root:not([data-theme='dark']):not([data-theme='light'])` went unrecognised — and it printed ✓ having checked none of a project's 12 light values. Quotes are normalised now, the `:root` and `html` forms of the light rule count, any no-JS root rule that excludes `data-theme` counts, and a light rule with tokens that the guard cannot place on the root fails instead of being skipped. Tested with the issue's forms (both values found), with one twin removed and one changed (both reported) and with a light rule on a subtree (fails); the five derived projects still pass with the same counts as before.
+
+### Known
+
+- **Feature text on the glass cards reads 4.09:1 in the dark theme**, up from 3.74:1 but below 4.5:1: it uses muted text over the bright aurora of that section. GlassKit's own card text, `--gl-card-text-color`, is 70 % in the dark theme — a candidate if the template wants AA there too.
+- **The primary button's glow prints as a pale orange box** without background graphics (the footer's "Abonnieren"). That is GlassKit's button in print, reported here for upstream.
+
+### For derived projects
+
+- Take `src/styles/site.css` (mirror values, the no-JS FAQ fallback, the header in print), `scripts/` and `SKILL.md`; bump GlassKit to `^1.31.0`; run `npm run check`. A brand.css in single quotes or with another no-JS selector is checked properly now — if it reports something, that was missing before too.
+- From `tests/smoke.spec.ts` take the stronger no-JS FAQ check (and the checkbox line of 1.3.0, if still open).
+- Look at buttons without `--auto` that size to their text, e.g. in a row of actions: they are 36 px wider now.
+
+### Template state at 1.5.0
+
+Astro 5 · GlassKit ^1.31.0 · AA contrast for muted text in the light theme · no-JS FAQ on GlassKit's grid accordion · header prints once · brand.css guard tolerant of quotes and selector variants · everything else as at 1.4.1.
+
+---
+
 ## [1.4.1] – 2026-10-18
 
 ### Changed

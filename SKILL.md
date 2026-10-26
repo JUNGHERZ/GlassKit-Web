@@ -73,7 +73,8 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
                         mirror (§3), including its surface-preset rules, against
                         GlassKit and prints the lines to add or replace — and checks
                         that every value brand.css sets for the light theme has its
-                        no-JS twin; check-markup.mjs (`check:markup`) finds glw override
+                        no-JS twin (either quote style, :root/html forms; a light
+                        rule it cannot place on the root fails); check-markup.mjs (`check:markup`) finds glw override
                         classes whose GlassKit base class is missing in the markup (§4),
                         any `<main>` outside the layout (§3 Landmarks) and open lines in
                         icons of primary buttons (§4).
@@ -98,7 +99,7 @@ scripts/check-*.mjs     Guards that tie site.css to the installed GlassKit. `npm
 | `Team` | People grid with initials avatars | `team[]` array; no photos in the template — replace avatars per project or drop the section |
 | `Pricing` | Two plan grids, one per audience | `plansB2C[]` / `plansB2B[]`; `hot: true` highlights one plan |
 | `Quote` | Serif testimonial, one per audience | Paired `.only-b2c` / `.only-b2b` blocks |
-| `Faq` | GlassKit accordion + FAQPage JSON-LD | Edit the `faqs[]` array; `audience: 'b2c'\|'b2b'` marks audience-specific questions. JSON-LD mirrors the default (no-JS) view: general + B2C only. Toggle handled by site.js; without JS all answers render expanded |
+| `Faq` | GlassKit accordion + FAQPage JSON-LD | Edit the `faqs[]` array; `audience: 'b2c'\|'b2b'` marks audience-specific questions. JSON-LD mirrors the default (no-JS) view: general + B2C only. Toggle handled by site.js; without JS all answers render expanded — site.css undoes GlassKit's collapse in both forms (grid rows since 1.30, `max-height` before), and the smoke test checks every answer of the default view, not only the first, which is open in the markup |
 | `LanguageSwitcher` | Language switcher in the header actions | Renders nothing with 1 language, a "DE \| EN" segmented pill with exactly 2, a details-based flag dropdown with 3+. Entries are LINKS to the equivalent page in the target language — never a JS toggle |
 | `Contact` | Contact form (`id="kontakt"` — nav/footer link here) | Endpoint configured in `site.ts` (`contactForm`); empty endpoint = demo mode. Honeypot field `botcheck`, required consent checkbox linking to `/datenschutz/`, B2B-only company field. With JS: fetch + inline `glass-status`; without JS: native POST to the endpoint. A click handler on the submit button shows `data-msg-invalid` when `checkValidity()` fails — a persistent, translatable message alongside the transient native bubble (with GlassKit ≤ 1.6.3 this was mandatory: the 0×0 hidden checkbox input gave the bubble no anchor, silently blocking the submit; fixed upstream in 1.6.4). While sending, site.js disables the submit button; GlassKit ≥ 1.21.2 dims it — no own disabled look |
 | `CtaBanner` | Closing call-to-action panel | Warm border (`--gl-border-warm`) |
@@ -208,7 +209,9 @@ recipe: accent text at 18 % primary on white, gradient text 45 % → 25 % (measu
 with `#c25028` on the default dark ground: 4.98–12.6:1 instead of 1.35–3.41:1).
 Every value brand.css sets for `[data-theme="light"]` needs its twin in brand.css's
 no-JS block, or the dark value applies without JS — `npm run check:tokens` names
-any that is missing.
+any that is missing or differs. It reads either quote style and the `:root`/`html`
+forms, accepts any no-JS root rule that excludes `data-theme`, and fails on a
+light rule it cannot place on the root (brand values belong on the root anyway).
 
 **GlassKit presets:** `data-surface="solid"` (opaque surfaces, no blur, GlassKit
 1.24) and `data-surface="tint"` (see-through tints of the text colour for a page
@@ -225,9 +228,11 @@ rarely right for a marketing page.
 
 **Print:** paper is light, so site.js switches to the light theme on
 `beforeprint` and back on `afterprint` (GlassKit 1.21.1's recipe; without JS the
-mirror covers `print`). The skip link is hidden in print. Check a legal page with
-Ctrl+P after design changes — dark-only projects print light as well, which is
-intended.
+mirror covers `print`). The skip link is hidden in print, and the fixed header
+prints once, at the top of page 1 — browsers repeat `position: fixed` on every
+page, so print sets `position: absolute`; that rule must stay after the
+`.glw-header` rule (same specificity). Check a legal page with Ctrl+P after design
+changes — dark-only projects print light as well, which is intended.
 
 **Landmarks & skip link:** BaseLayout wraps every page in the one
 `<main id="main" tabindex="-1">` and puts a skip link (`.glw-skip`, "Zum Inhalt
@@ -475,6 +480,10 @@ quietly — that is what the guards are for.
      tokens (`--gl-color-*-on-surface`).
    - Icons in the project's own primary buttons: `npm run check:markup` flags
      open lines; look at the rest (GlassKit fills these icons, §4).
+   - Buttons without `--auto` that take their width from their text: since
+     GlassKit 1.31 every `.glass-btn` has 24 px inline padding (`--gl-btn-padding-x`),
+     so such buttons grow by 36 px — look at rows of actions; full-width and
+     `--auto` buttons are unchanged.
    - A dark brand primary: take the accent-text recipe from the template's
      brand.css (§3 Brand colours).
    - Tests that click the visual part of a GlassKit control

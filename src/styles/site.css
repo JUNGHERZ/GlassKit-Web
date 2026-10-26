@@ -81,7 +81,7 @@ body { margin: 0; }
     --gl-color-bg-mid:         #f0f4f8;
     --gl-color-bg-light:       #f5f7fa;
     --gl-color-text:           #1a2a36;
-    --gl-color-text-muted:     rgba(26, 42, 54, 0.55);
+    --gl-color-text-muted:     rgba(26, 42, 54, 0.68);
     --gl-color-text-on-light:  #1a3a4a;
     --gl-color-text-heading:   #0f1f2a;
     --gl-color-success:        #28a745;
@@ -98,7 +98,7 @@ body { margin: 0; }
     --gl-color-warning-on-surface: color-mix(in srgb, var(--gl-color-warning) 56%, #000000);
     --gl-state-scrim:          rgba(255, 255, 255, 0.30);
     --gl-toggle-thumb-bg:      linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
-    --gl-select-chevron:       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(26,42,54,0.55)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    --gl-select-chevron:       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(26,42,54,0.68)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     --gl-surface-1:            rgba(255, 255, 255, 0.50);
     --gl-surface-2:            rgba(255, 255, 255, 0.60);
     --gl-surface-3:            rgba(255, 255, 255, 0.70);
@@ -111,20 +111,20 @@ body { margin: 0; }
     --gl-card-glow-mid:        rgba(255, 255, 255, 0.78);
     --gl-card-glow-low:        rgba(255, 255, 255, 0.65);
     --gl-card-glow-bottom:     rgba(255, 255, 255, 0.50);
-    --gl-card-icon-color:      rgba(26, 42, 54, 0.5);
-    --gl-card-text-color:      rgba(26, 42, 54, 0.6);
+    --gl-card-icon-color:      rgba(26, 42, 54, 0.65);
+    --gl-card-text-color:      rgba(26, 42, 54, 0.68);
     --gl-border-subtle:        rgba(0, 0, 0, 0.08);
     --gl-border-medium:        rgba(0, 0, 0, 0.12);
     --gl-border-strong:        rgba(0, 0, 0, 0.15);
     --gl-border-milk:          rgba(0, 0, 0, 0.10);
     --gl-border-warm:          color-mix(in srgb, var(--gl-color-primary) 30%, transparent);
     --gl-border-focus:         color-mix(in srgb, var(--gl-color-primary) 50%, transparent);
-    --gl-icon-default:         rgba(26, 42, 54, 0.50);
-    --gl-icon-muted:           rgba(26, 42, 54, 0.35);
-    --gl-icon-strong:          rgba(26, 42, 54, 0.70);
+    --gl-icon-default:         rgba(26, 42, 54, 0.65);
+    --gl-icon-muted:           rgba(26, 42, 54, 0.55);
+    --gl-icon-strong:          rgba(26, 42, 54, 0.80);
     --gl-icon-on-primary:      var(--gl-color-on-primary, #ffffff);
     --gl-icon-on-secondary:    #1a3a4a;
-    --gl-icon-on-tertiary:     rgba(26, 42, 54, 0.50);
+    --gl-icon-on-tertiary:     rgba(26, 42, 54, 0.65);
     --gl-shadow-card:          0 4px 20px rgba(0, 0, 0, 0.06);
     --gl-shadow-btn:           0 2px 10px rgba(0, 0, 0, 0.06);
     --gl-shadow-btn-primary:   0 4px 16px color-mix(in srgb, var(--gl-color-primary) 25%, transparent), 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -245,6 +245,11 @@ body { margin: 0; }
   transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   border-bottom: 1px solid transparent;
 }
+
+/* Druck: Ein fixiertes Element wiederholt der Browser auf jeder Seite — der
+   Header überdeckte ab Seite 2 den Inhalt. Im Druck steht er nur oben auf
+   Seite 1. Muss NACH der .glw-header-Regel stehen (gleiche Spezifität). */
+@media print { .glw-header { position: absolute; } }
 
 .glw-header.is-scrolled,
 .glw-nav-open .glw-header {
@@ -1540,8 +1545,9 @@ body { margin: 0; }
   margin: clamp(32px, 5vw, 48px) auto 0;
 }
 
-/* Ohne JS alle Antworten aufklappen (GlassKit kollabiert per max-height) */
-html:not(.js) .glass-accordion__content { max-height: none; }
+/* Ohne JS alle Antworten aufklappen. GlassKit klappt seit 1.30 per Grid zu
+   (grid-template-rows 0fr → 1fr), davor per max-height — beides aufheben. */
+html:not(.js) .glass-accordion__content { max-height: none; grid-template-rows: minmax(0, 1fr); }
 
 /* ---- 12d. Prozess-Schritte ---------------------------------------- */
 

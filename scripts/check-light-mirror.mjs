@@ -75,6 +75,8 @@ const findGlasskit = (test, label) => {
   return tokensOf(rule[1]);
 };
 const parts = (sel) => sel.split(',').map((s) => s.trim());
+// Selektoren vergleichbar machen: Projekte schreiben '…' oder "…" (Issue #21)
+const norm = (sel) => sel.replace(/'/g, '"').replace(/\s+/g, ' ').trim();
 const dark = findGlasskit((sel) => parts(sel).includes(':root'), ':root (dark)');
 const light = findGlasskit((sel) => sel === '[data-theme="light"]', '[data-theme="light"]');
 // Presets (ab GlassKit 1.24/1.25) — fehlen sie, ist GlassKit älter
@@ -96,12 +98,12 @@ const MEDIA = /^@media\s*\(\s*prefers-color-scheme\s*:\s*light\s*\)(\s*,\s*print
 let mirror = null;
 const presetRules = new Map();
 for (const [sel, body] of rulesOf(stripComments(readFileSync(SITE, 'utf8')))) {
-  if (!MEDIA.test(sel)) continue;
+  if (!MEDIA.test(norm(sel))) continue;
   const inner = rulesOf(body);
-  const rule = inner.find(([s]) => s === ':root:not([data-theme])');
+  const rule = inner.find(([s]) => norm(s) === ':root:not([data-theme])');
   if (!rule) continue;
   mirror = tokensOf(rule[1]);
-  for (const [s, b] of inner) if (PRESETS.some((p) => p.selector === s)) presetRules.set(s, tokensOf(b));
+  for (const [s, b] of inner) if (PRESETS.some((p) => p.selector === norm(s))) presetRules.set(norm(s), tokensOf(b));
   break;
 }
 
@@ -193,30 +195,46 @@ for (const preset of PRESETS) {
   } else presetSummary.push(`${preset.label.replace('Preset ', '')} ${mine.size}`);
 }
 
-// brand.css: Werte nur für [data-theme="light"] brauchen ihren No-JS-Zwilling
+// brand.css: Werte nur für das Light-Theme brauchen ihren No-JS-Zwilling. Markendateien
+// schreiben ihre Selektoren unterschiedlich — Anführungszeichen egal, Varianten erlaubt —
+// und eine Prüfung, die still nichts prüft, ist schlimmer als keine (Issue #21).
+const LIGHT_ROOT = /^(?::root|html)?\[data-theme="light"\]$/;  // [data-theme="light"], :root[…], html[…]
+const NOJS_ROOT = /^(?::root|html):not\(\[data-theme/;        // :root:not([data-theme]) und Varianten
 let brandProblems = 0;
 let brandLightCount = 0;
 if (existsSync(BRAND)) {
   const lightBrand = new Map();
   const nojsBrand = new Map();
-  for (const [sel, body] of rulesOf(stripComments(readFileSync(BRAND, 'utf8')))) {
+  const unreadable = [];
+  for (const [rawSel, body] of rulesOf(stripComments(readFileSync(BRAND, 'utf8')))) {
+    const sel = norm(rawSel);
     if (MEDIA.test(sel)) {
-      for (const [s, b] of rulesOf(body)) if (s === ':root:not([data-theme])') for (const [k, v] of tokensOf(b)) nojsBrand.set(k, v);
-    } else if (parts(sel).includes('[data-theme="light"]')) {
-      for (const [k, v] of tokensOf(body)) lightBrand.set(k, v);
+      for (const [s, b] of rulesOf(body)) {
+        if (parts(norm(s)).some((x) => NOJS_ROOT.test(x))) for (const [k, v] of tokensOf(b)) nojsBrand.set(k, v);
+      }
+    } else if (sel.includes('[data-theme="light"]') && tokensOf(body).size) {
+      if (parts(sel).some((x) => LIGHT_ROOT.test(x))) for (const [k, v] of tokensOf(body)) lightBrand.set(k, v);
+      else unreadable.push(sel);
     }
   }
   brandLightCount = lightBrand.size;
+  if (unreadable.length) {
+    brandProblems += unreadable.length;
+    console.error(`\n✗ brand.css hat ${unreadable.length === 1 ? 'eine Light-Regel' : `${unreadable.length} Light-Regeln`} mit Tokens, die der Guard nicht der Seitenwurzel zuordnen kann:\n`);
+    for (const sel of unreadable) console.error(`    ${sel}`);
+    console.error('\n  Markenwerte gehören auf die Wurzel: [data-theme="light"] (auch :root[…] oder html[…]).');
+    console.error('  Sonst ließe sich ihr No-JS-Zwilling nicht prüfen — und der Guard hätte still nichts geprüft.');
+  }
   const bMissing = [...lightBrand].filter(([k]) => !nojsBrand.has(k));
   const bWrong = [...lightBrand].filter(([k, v]) => nojsBrand.has(k) && nojsBrand.get(k) !== v);
   if (bMissing.length || bWrong.length) {
-    brandProblems = bMissing.length + bWrong.length;
-    console.error(`\n✗ brand.css setzt ${token(brandProblems)} für [data-theme="light"], ohne ${verb(brandProblems, 'ihn', 'sie')} im No-JS-Block gleich zu setzen.`);
-    console.error('  Ohne JavaScript (und beim Drucken ohne JS) gilt dort sonst der Dark-Wert aus :root.');
-    console.error('  In brand.css so führen:\n');
-    console.error('  @media (prefers-color-scheme: light), print {\n    :root:not([data-theme]) {');
-    for (const [k, v] of lightBrand) console.error(`  ${line(k, v)}`);
-    console.error('    }\n  }');
+    brandProblems += bMissing.length + bWrong.length;
+    const n = bMissing.length + bWrong.length;
+    console.error(`\n✗ brand.css setzt ${token(n)} für das Light-Theme, ohne ${verb(n, 'ihn', 'sie')} im No-JS-Block gleich zu setzen:\n`);
+    for (const [k, v] of bMissing) console.error(`${line(k, v)}   ← fehlt`);
+    for (const [k, v] of bWrong) console.error(`${line(k, v)}\n        bisher: ${nojsBrand.get(k)}`);
+    console.error('\n  Ohne JavaScript (und beim Drucken ohne JS) gilt dort sonst der Dark-Wert aus :root.');
+    console.error('  Der No-JS-Block: @media (prefers-color-scheme: light), print { :root:not([data-theme]) { … } }');
   }
 }
 

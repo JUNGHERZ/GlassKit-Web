@@ -270,15 +270,21 @@ test.describe('Ohne JavaScript', () => {
     await expect(page.locator('h1.only-b2b')).toBeHidden();
     // Ohne html.js darf nichts per Reveal-Opacity versteckt sein
     await expect(page.locator('.reveal').first()).toHaveCSS('opacity', '1');
-    // FAQ-Antworten sind ohne JS vollständig ausgeklappt
-    await expect(page.locator('.glass-accordion__content').first()).toBeVisible();
+    // FAQ-Antworten sind ohne JS vollständig ausgeklappt — alle der Standardansicht, nicht nur
+    // die erste: die ist schon im Markup offen und bewies nichts (GlassKit 1.30 klappt per Grid
+    // zu). B2B-Fragen sind ohne JS bewusst verborgen, B2C ist der Standard.
+    const answers = page.locator('.glass-accordion__item:not(.only-b2b) .glass-accordion__content');
+    const count = await answers.count();
+    expect(count).toBeGreaterThan(1);
+    for (let i = 0; i < count; i++) await expect(answers.nth(i)).toBeVisible();
   });
 
   test('Druck ohne JS: dunkle Schrift auch bei dunkler OS-Präferenz', async ({ page }) => {
     // Der Light-Spiegel gilt auch für @media print — ohne ihn gäbe es helle Schrift auf Papier
     await page.emulateMedia({ colorScheme: 'dark', media: 'print' });
     await page.goto('datenschutz/');
-    await expect(page.locator('.glw-prose p').first()).toHaveCSS('color', 'rgba(26, 42, 54, 0.55)');
+    // Dunkle Light-Schrift (Alpha folgt GlassKits gedämpftem Text, seit 1.31 0.68)
+    await expect(page.locator('.glw-prose p').first()).toHaveCSS('color', /^rgba\(26, 42, 54, /);
   });
 
   for (const [surface, expected] of [
@@ -310,6 +316,8 @@ test('Druck: Light-Theme fürs Papier, Skip-Link ausgeblendet', async ({ page })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('.glw-skip')).toBeHidden();
+  // Fixiert wiederholte sich der Header auf jeder Druckseite und überdeckte ab Seite 2 den Inhalt (Issue #20)
+  await expect(page.locator('.glw-header')).toHaveCSS('position', 'absolute');
 });
 
 test('RSS-Feed, Sitemap und llms.txt sind erreichbar', async ({ request }) => {
