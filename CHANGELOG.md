@@ -10,6 +10,40 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.6.0] – 2026-10-30
+
+### Changed
+
+- **GlassKit `^1.31.0` → `^1.38.0`.** Seven minor releases and a patch, measured as before (computed-style protocol over 8,905 elements on eight page types in dark, light, mobile and no-JS light, full-page pixel comparison of seven pages in both themes at 1280 and 390 px, measured contrast). Most of it — tab bar, sheet, tree, menu, tooltip, sorting, list tiles — is not used by the template, and the surface presets are unchanged. What reaches it:
+  - **The status line of the contact form is 28 px lower (1.36.0).** `.glass-status p` has `margin: 0` now, so the line goes from 82 to 54 px, on a phone from 103 to 75 px; icon and text stay centred.
+  - **Accent text on a card has its own token (1.35.0)**, see the next entry.
+  - **The no-JS light mirror** takes six new lines: `--gl-dialog-glow-top`, `--gl-dialog-well`, `--gl-dialog-raised`, `--gl-dialog-control` and `--gl-badge-selected-color` at `initial`, and `--gl-color-primary-on-glass`. GlassKit's changelog names them, and the token guard printed exactly these lines.
+- **Accent on a card uses `--gl-color-primary-on-glass`.** A card is brighter than the page, and GlassKit asks links of a page's own on a card to take the new token as well. The template's step numbers, "Read more" links, hovered post titles, the privacy link of the contact form and the focus ring on a card do now. Measured in the dark theme on the demo's own backgrounds: contact link 5.22 → 6.92:1, step numbers 3.04 → 4.02:1, hovered post title 3.03 → 4.01:1, "Read more" and focus ring 2.81 → 3.72:1 on the first card. The light theme is pixel-identical on every page, and in the dark theme only these spots differ. Line icons on a card stay on the primary text: the feature icons reach 3.06:1, and the showcase rail is `aria-hidden`. A smoke test covers the rules and fails against the old ones.
+- **The family numbers on the product page and in `llms.txt`** are current: GlassKit 38 components, GlassKit Elements 46 (they said 34 and 33).
+
+### Added
+
+- **`brand.css` carries an opt-in for accent text in the light theme.** GlassKit keeps the primary as text there on purpose, because a fixed mix would darken every brand alike, so its orange reads about 2.4:1. The recipe takes the badge ink for accent text and starts the gradient text at primary-dark: on the demo's backgrounds accent text and icons go from 1.97–2.55:1 to 4.72–6.12:1, gradient text from 2.42 → 3.40:1 to 3.40 → 5.81:1 (large text, limit 3:1). Tested uncommented, through the guard and on the built page. The demo keeps the orange: that look is a brand decision.
+- **`SKILL.md`** names GlassKit's new building blocks in §2c (`.glass-breadcrumbs`, the extended `.glass-table`, `.glass-badge--md`, `.glass-list--grid`, `--gl-avatar-size`, and tooltip, menu and tree as app territory), the card rule in §3 and §4, and a review point in §7. All "not for" cases still hold: `.glass-segmented` has no link variant, and its items stay on one line.
+
+### Known
+
+- **"Read more" on the blog cards stays below AA in the dark theme, at 3.37–4.97:1 depending on the card.** The blog page is short, and GlassKit's aurora scales with the page, so its brightest part lies right behind the cards. It is the same cause as the feature text (4.09:1, see 1.5.0), which is unchanged.
+- **GlassKit's orange as text in the light theme reads about 2.4:1**, as it did before this release; see the recipe above.
+
+### For derived projects
+
+- Take `src/styles/site.css` and `SKILL.md` (`scripts/` is unchanged since 1.5.0); bump GlassKit to `^1.38.0`; run `npm run check`. A mirror the project edited gets the six lines printed.
+- `brand.css` needs nothing: with the dark-primary recipe, `--gl-color-primary-on-glass` follows by itself. Whoever sets that token, sets it in all three blocks. The light-theme recipe is a visible design change, so offer it rather than adopt it silently.
+- Accent text of the project's own on a card takes the new token (§7 step 9). The five current projects have none outside `site.css`.
+- From `tests/smoke.spec.ts` take the card test. The older accent test still passes: the suite runs in the light theme, where the new token is the accent text.
+
+### Template state at 1.6.0
+
+Astro 5 · GlassKit ^1.38.0 · accent on cards through `--gl-color-primary-on-glass` · opt-in for AA accent text in the light theme · everything else as at 1.5.0.
+
+---
+
 ## [1.5.0] – 2026-10-27
 
 ### Changed

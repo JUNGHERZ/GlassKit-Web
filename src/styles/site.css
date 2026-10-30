@@ -26,6 +26,9 @@ body { margin: 0; }
 /* Akzentfarben: --gl-color-primary ist die Fläche (Buttons, Tönungen, Glows).
    Als Text, Linien-Icon oder Fokusring direkt auf Seite und Glas steht
    --gl-color-primary-text (GlassKit ≥ 1.26, ohne eigenen Wert = Primary).
+   Eine Karte ist heller als die Seite: Text, Links und Chips auf .glass-card
+   nehmen --gl-color-primary-on-glass (GlassKit ≥ 1.35, im Dark-Theme mit 40 %
+   Weiß, im Light-Theme = Primary-Text), ebenso der Fokusring dort.
    Die Verlaufsschriften (Glint, Kennzahlen, Case-Metriken) laufen von
    --glw-gradient-text-from nach --glw-gradient-text-to, ohne eigene Werte
    Primary → Primary-dark. Eine Marke mit dunkler Primärfarbe hellt beides im
@@ -33,6 +36,10 @@ body { margin: 0; }
 :focus-visible {
   outline: 2px solid var(--gl-color-primary-text, var(--gl-color-primary));
   outline-offset: 3px;
+}
+
+.glass-card :focus-visible {
+  outline-color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
 }
 
 /* Skip-Link (BaseLayout): erster Tab-Stopp jeder Seite, unsichtbar bis zum
@@ -143,6 +150,15 @@ body { margin: 0; }
     --gl-bg-light-streak-2:    rgba(160, 220, 210, 0.08);
     --gl-bg-warm-glow:         rgba(240, 180, 100, 0.08);
     --gl-placeholder:          rgba(26, 42, 54, 0.30);
+    /* Nur der dunkle Dialog-Satz (GlassKit ≥ 1.35): initial nimmt die Dark-Werte
+       zurück, sonst hielten Modal und Sheet hier den dunklen Glow und die Mulden.
+       Primary auf Glas ist im Hellen wieder der Primary-Text. */
+    --gl-dialog-glow-top:      initial;
+    --gl-dialog-well:          initial;
+    --gl-dialog-raised:        initial;
+    --gl-dialog-control:       initial;
+    --gl-badge-selected-color: initial;
+    --gl-color-primary-on-glass: var(--gl-color-primary-text);
   }
   /* Oberflächen-Presets (GlassKit ≥ 1.24, data-surface am <html>): Ohne
      data-theme griffe sonst der Glas-Spiegel oben. Werte = GlassKits
@@ -1573,7 +1589,7 @@ html:not(.js) .glass-accordion__content { max-height: none; grid-template-rows: 
   font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--gl-color-primary-text, var(--gl-color-primary));
+  color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
 }
 
 .glw-step h3 {
@@ -1702,7 +1718,7 @@ html:not(.js) .glass-accordion__content { max-height: none; grid-template-rows: 
   transition: color 0.2s ease;
 }
 
-.glw-post-card h2 a:hover { color: var(--gl-color-primary-text, var(--gl-color-primary)); }
+.glw-post-card h2 a:hover { color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary))); }
 
 .glw-post-card p {
   font-size: 15px;
@@ -1717,7 +1733,7 @@ html:not(.js) .glass-accordion__content { max-height: none; grid-template-rows: 
   gap: 7px;
   font-size: 14.5px;
   font-weight: var(--gl-font-weight-semibold);
-  color: var(--gl-color-primary-text, var(--gl-color-primary));
+  color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
   text-decoration: none;
 }
 
@@ -1815,7 +1831,7 @@ html:not(.js) .glass-accordion__content { max-height: none; grid-template-rows: 
 }
 
 .glw-contact .glass-checkbox__label a {
-  color: var(--gl-color-primary-text, var(--gl-color-primary));
+  color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
   text-decoration: none;
 }
 

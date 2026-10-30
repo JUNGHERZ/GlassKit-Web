@@ -161,7 +161,7 @@ test('Akzent-Text folgt --gl-color-primary-text, Verlaufsschrift ihren Stellschr
   // Eine Marke mit dunkler Primärfarbe hellt Akzent-Text im Dark-Theme auf (Issue #19, brand.css)
   await page.goto('');
   await page.addStyleTag({ content: ':root { --gl-color-primary-text: rgb(1, 2, 3); --glw-gradient-text-from: rgb(4, 5, 6); --glw-gradient-text-to: rgb(7, 8, 9); }' });
-  for (const sel of ['.glw-eyebrow', '.glw-step__num', '.glw-quote__mark', '.glw-footer__bottom a', '.glw-contact .glass-checkbox__label a']) {
+  for (const sel of ['.glw-eyebrow', '.glw-quote__mark', '.glw-footer__bottom a']) {
     await expect(page.locator(sel).first(), sel).toHaveCSS('color', 'rgb(1, 2, 3)');
   }
   await expect(page.locator('.glw-microtrust svg').first()).toHaveCSS('stroke', 'rgb(1, 2, 3)');
@@ -170,6 +170,28 @@ test('Akzent-Text folgt --gl-color-primary-text, Verlaufsschrift ihren Stellschr
   }
   // Flächen bleiben Primary: Buttons ändern sich nicht
   await expect(page.locator('.glass-btn--primary').first()).not.toHaveCSS('background-image', /rgb\(1, 2, 3\)/);
+});
+
+test('Akzent auf Karten folgt --gl-color-primary-on-glass, auch der Fokusring', async ({ page }) => {
+  // Eine Karte ist heller als die Seite (GlassKit 1.35): Text, Links und Chips dort
+  const glass = ':root { --gl-color-primary-on-glass: rgb(1, 2, 3); }';
+  await page.goto('');
+  await page.addStyleTag({ content: glass });
+  for (const sel of ['.glw-step__num', '.glw-contact .glass-checkbox__label a']) {
+    await expect(page.locator(sel).first(), sel).toHaveCSS('color', 'rgb(1, 2, 3)');
+  }
+  // Auf der Seite selbst bleibt es beim Akzent-Text
+  await expect(page.locator('.glw-eyebrow').first()).not.toHaveCSS('color', 'rgb(1, 2, 3)');
+
+  await page.goto('blog/');
+  await page.addStyleTag({ content: glass });
+  const more = page.locator('.glw-post-card__more').first();
+  await expect(more).toHaveCSS('color', 'rgb(1, 2, 3)');
+  await more.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(more).toBeFocused();
+  await expect(more).toHaveCSS('outline-color', 'rgb(1, 2, 3)');
 });
 
 test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand', async ({ page }) => {

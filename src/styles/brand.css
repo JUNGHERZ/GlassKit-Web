@@ -50,6 +50,12 @@
    Grund: Akzent-Text 4,98–12,6:1 statt 1,35–3,41:1, Glint
    5,3 → 7,2:1 statt 2,2 → 1,5:1.
 
+   Auf Karten zieht der Akzent von selbst mit: --gl-color-primary-
+   on-glass (GlassKit ≥ 1.35) ist im Dark-Theme dieser Akzent-Text
+   mit 40 % Weiß, im Light-Theme der Akzent-Text selbst — gemessen
+   auf den Demo-Karten 4,92–9,16:1. Wer das Token selbst setzt,
+   setzt es wie die anderen in allen drei Blöcken.
+
    Alle drei Blöcke sind nötig: :root trifft auch eine helle Seite,
    deshalb folgt die Light-Regel danach — und ohne JavaScript fehlt
    data-theme, das übernimmt der No-JS-Block (auch beim Drucken).
@@ -71,6 +77,40 @@
     --gl-color-primary-text:   var(--gl-color-primary);
     --glw-gradient-text-from:  var(--gl-color-primary);
     --glw-gradient-text-to:    var(--gl-color-primary-dark);
+  }
+}
+*/
+
+
+/* ============================================================
+   BEISPIEL: Helle Primärfarbe — Akzent-Text im Light-Theme abdunkeln
+
+   GlassKit lässt die Primärfarbe als Text im Light-Theme bewusst
+   stehen, eine feste Mischung würde jede Marke abdunkeln. Das
+   Standard-Orange erreicht dort als Text nur rund 2,4:1. Wer es
+   behält, nimmt für Akzent-Text die Tinte der Badges und lässt die
+   Verlaufsschriften von Primary-dark starten. Gemessen auf den
+   Gründen der Demo: Akzent-Text und Icons 4,72–6,12:1 statt
+   1,97–2,55:1, Verlaufsschrift 3,40 → 5,81:1 statt 2,42 → 3,40:1
+   (Großschrift, Grenze 3:1).
+
+   Beide Blöcke sind nötig: ohne JavaScript fehlt data-theme, das
+   übernimmt der No-JS-Block (auch beim Drucken). Wer auch das
+   Rezept für dunkle Primärfarben nutzt, ändert dort die Light-
+   Werte, statt zweite Blöcke anzulegen.
+   ============================================================ */
+
+/*
+[data-theme="light"] {
+  --gl-color-primary-text:   var(--gl-color-primary-on-surface);
+  --glw-gradient-text-from:  var(--gl-color-primary-dark);
+  --glw-gradient-text-to:    var(--gl-color-primary-on-surface);
+}
+@media (prefers-color-scheme: light), print {
+  :root:not([data-theme]) {
+    --gl-color-primary-text:   var(--gl-color-primary-on-surface);
+    --glw-gradient-text-from:  var(--gl-color-primary-dark);
+    --glw-gradient-text-to:    var(--gl-color-primary-on-surface);
   }
 }
 */

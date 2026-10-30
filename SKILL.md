@@ -156,23 +156,26 @@ section lead; never introduce raster/stock imagery for these purposes.
 
 ### 2c. GlassKit building blocks vs. the glw layer
 
-GlassKit keeps growing (34 components since 1.19, plus the droplet module in 1.27). Before adding a `glw-` block,
+GlassKit keeps growing (38 components since 1.32, plus the droplet module in 1.27). Before adding a `glw-` block,
 check whether GlassKit already has it — and know where the website layer stays
 separate on purpose:
 
 | GlassKit | Use in a website for | Not for — the template keeps its own |
 |---|---|---|
 | `.glass-prose` (1.14) | All running text — the template builds on it (`glass-prose glw-prose`) | — |
-| `.glass-table` (1.14) | Comparison tables (plan matrix, spec sheet) inside a section | — |
+| `.glass-table` (1.14) | Comparison tables (plan matrix, spec sheet) inside a section. Since 1.32 also sorting (`__sort`), a sticky header (`.glass-table-wrap--sticky`) and cards on narrow screens (`--list` with `data-label`) | — |
+| `.glass-breadcrumbs` (1.32) | The path on deep pages, e.g. blog → category → article: a `<nav>` around an `<ol>`, the current level as text with `aria-current="page"` | — |
 | `.glass-badge--warning` (1.18) | A third tone for "beta", "limited", "pending" chips | — |
-| `.glass-avatar` (early) | Real team photos (`<img>` inside, `object-fit: cover`), neutral initials on glass | LUMEN's `.glw-avatar`: initials on a filled brand gradient, a different look rather than a variant — swap to `.glass-avatar` when a project brings photos |
+| `.glass-badge--md` (1.33) | A chip to choose with, e.g. a blog tag filter: 36 px high | — |
+| `.glass-list--grid` (1.34) | Tiles side by side: link tiles, opening hours | The card grids of `Features` and `Cases`: full cards with their own copy, not list rows |
+| `.glass-avatar` (early) | Real team photos (`<img>` inside, `object-fit: cover`), neutral initials on glass; any size through `--gl-avatar-size` (1.37) | LUMEN's `.glw-avatar`: initials on a filled brand gradient, a different look rather than a variant — swap to `.glass-avatar` when a project brings photos |
 | `.glass-segmented` (1.15) | A small exclusive choice in content, e.g. monthly / yearly pricing. `--droplet` (1.27) adds the iOS-26 fluid selection; its motion comes from the optional module: `import { attachDroplets } from '@jungherz-de/glasskit/glasskit-droplet.js'` in site.js, then `attachDroplets()` — without it the row keeps its plain look | The hero's audience switch `.glw-seg`: its two long labels wrap inside the pill on narrow phones, while `.glass-segmented` keeps items on one line — at 320 px the second option would run past the edge, droplet or not. The language pill `.glw-lang` is made of **links** (`aria-current`), and `.glass-segmented` styles only `aria-pressed` buttons |
 | `.glass-steps` (1.15) | Progress through a multi-step form | The `Process` section (`.glw-steps`): a marketing sequence of cards, not a progress state |
 | `.glass-empty` (1.15) | Empty states, e.g. a blog filter with no hits | The 404 page: an editorial text page with two actions |
 | `.glass-toast` + `__action` / `__close` (1.19) | JS-driven transient notices | Form results: `Contact` keeps the inline `glass-status` next to the form — it persists and needs no JS to be read |
 | `.glass-sheet` (1.15) | App-like bottom sheets | The mobile menu: `<details>`-based, must work without JS |
 | `.glass-input-wrap` + `__prefix` / `__suffix` (1.22) | A unit, icon or button inside a field: price calculator, newsletter field with a send icon | — |
-| `.glass-skeleton` (1.14), `.glass-calendar`, `.glass-date-strip`, `.glass-image-picker` (1.16) | Rarely on a static marketing site — app territory (GlassKit Elements) | — |
+| `.glass-skeleton` (1.14), `.glass-calendar`, `.glass-date-strip`, `.glass-image-picker` (1.16), `.glass-tooltip`, `.glass-menu`, `.glass-tree` (1.32), `.glass-input-group--label-end` and `__counter` (1.33, 1.37) | Rarely on a static marketing site — app territory (GlassKit Elements) | — |
 
 If a "not for" case changes upstream (e.g. `.glass-segmented` learns links or
 wrapping labels), migrate per the rule in §4 and register the pair in
@@ -207,6 +210,15 @@ border, focus glow and button glow are mixed from them. A primary dark enough fo
 white button text is too dark as text on the dark theme — brand.css carries the
 recipe: accent text at 18 % primary on white, gradient text 45 % → 25 % (measured
 with `#c25028` on the default dark ground: 4.98–12.6:1 instead of 1.35–3.41:1).
+A card is brighter than the page, so accent on it uses `--gl-color-primary-on-glass`
+(GlassKit 1.35; §4): the accent text with 40 % white in the dark theme, the accent
+text in the light theme. The recipe needs no line for it; a project that sets the
+token itself sets it in all three blocks, because `:root` also matches a light
+page. The reverse case is GlassKit's own orange in the light theme, about 2.4:1 as
+text: GlassKit leaves that to the brand, and brand.css carries the opt-in (badge ink
+as accent text, gradient text from primary-dark, measured 4.72–6.12:1). White on
+the accent fills reaches AA through GlassKit's `--gl-btn-primary-bg` and
+`--gl-color-primary-fill` (1.32) without touching the accent itself.
 Every value brand.css sets for `[data-theme="light"]` needs its twin in brand.css's
 no-JS block, or the dark value applies without JS — `npm run check:tokens` names
 any that is missing or differs. It reads either quote style and the `:root`/`html`
@@ -343,7 +355,7 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - Import order in BaseLayout: `@jungherz-de/glasskit/glasskit.css` **before** `../styles/site.css`.
 - Keep the bootstrap script as `<script is:inline>` in `<head>` (it must run before first paint).
 - Build every page/anchor link with `href()` from `src/data/site.ts`: `href('/#preise')`, `href('/impressum/')` — subpage links with trailing slash. Inside a language branch include the prefix: `href('/en/#pricing')`.
-- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink. Accent drawn straight onto page or glass — eyebrows, links, step numbers, line icons, list markers, the focus ring — uses `var(--gl-color-primary-text, var(--gl-color-primary))` (GlassKit 1.26); fills, tints and glows keep `--gl-color-primary`. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to` (default primary → primary-dark) — the only site-layer hooks brand.css may set.
+- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink. Accent drawn straight onto page or glass — eyebrows, links, step numbers, line icons, list markers, the focus ring — uses `var(--gl-color-primary-text, var(--gl-color-primary))` (GlassKit 1.26); fills, tints and glows keep `--gl-color-primary`. Text, links and chips on a `.glass-card` use `var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)))` (GlassKit 1.35) instead, and so does the focus ring there: a card is brighter than the page. Line icons on a card stay on the primary text. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to` (default primary → primary-dark) — the only site-layer hooks brand.css may set.
 - Icons in `.glass-btn--primary` are filled: GlassKit fills them (`stroke-width: 0`). Draw them as closed shapes (holes with `fill-rule="evenodd"`) or leave them out; outline icons belong in secondary and tertiary buttons. `npm run check:markup` flags open lines; overlapping closed shapes (a lens drawn inside a camera body) still need a look.
 - A glw rule that sets `display` on an element carrying `.glass-btn` needs both classes (`.glass-btn.glw-…`): once the element is a link, GlassKit's `a.glass-btn { display: inline-flex }` (0,1,1) beats a single class.
 - Running text (rendered Markdown, legal pages) sits in a `glass-prose glw-prose` container. Do not restate what `.glass-prose` already styles; add to `.glw-prose` only what the site wants differently.
@@ -486,6 +498,11 @@ quietly — that is what the guards are for.
      `--auto` buttons are unchanged.
    - A dark brand primary: take the accent-text recipe from the template's
      brand.css (§3 Brand colours).
+   - Accent text of the project's own on a `.glass-card` — a link, a chip, a
+     number (`grep -rn "gl-color-primary" src/components src/pages`, the
+     project's own rules outside site.css): it takes
+     `--gl-color-primary-on-glass` since GlassKit 1.35 (§4). Links in
+     `.glass-prose` follow by themselves.
    - Tests that click the visual part of a GlassKit control
      (`.glass-checkbox__box`, a toggle track, a radio circle): since GlassKit
      1.20 the invisible input lies on top — tick by role instead (§3 testing note).
