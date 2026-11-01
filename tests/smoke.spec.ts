@@ -194,6 +194,19 @@ test('Akzent auf Karten folgt --gl-color-primary-on-glass, auch der Fokusring', 
   await expect(more).toHaveCSS('outline-color', 'rgb(1, 2, 3)');
 });
 
+test('FAQ: Der Fokusring liegt innen, das Item schneidet außen ab', async ({ page }) => {
+  // .glass-accordion__item hat overflow: hidden — ein Ring außerhalb des Triggers bleibt unsichtbar,
+  // obwohl der Computed Style ihn meldet
+  await page.goto('');
+  const trigger = page.locator('.glass-accordion__item:not(.only-b2b) .glass-accordion__trigger').nth(1);
+  await trigger.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveCSS('outline-style', 'solid');
+  await expect(trigger).toHaveCSS('outline-offset', '-2px');
+});
+
 test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand', async ({ page }) => {
   await page.goto('');
   const status = page.locator('#contactStatus');

@@ -42,6 +42,11 @@ body { margin: 0; }
   outline-color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
 }
 
+/* Das Akkordeon-Item schneidet mit overflow: hidden alles außerhalb des
+   Triggers ab. Nach innen gezogen bleibt der Ring sichtbar und liegt genau auf
+   GlassKits blasserem Inset-Ring (GlassKit ≥ 1.39), den er abdeckt. */
+.glass-accordion__trigger:focus-visible { outline-offset: -2px; }
+
 /* Skip-Link (BaseLayout): erster Tab-Stopp jeder Seite, unsichtbar bis zum
    Tastaturfokus, dann oben links über dem Header (z-index über dessen 50,
    SKILL.md §4). Secondary-Look: dunkle Schrift auf heller Platte erreicht AA,

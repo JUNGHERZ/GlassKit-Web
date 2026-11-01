@@ -10,6 +10,33 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.6.1] – 2026-11-01
+
+### Changed
+
+- **GlassKit `^1.38.0` → `^1.39.0`.** No theme token is new, so the no-JS light mirror stays as it is. The computed-style protocol over 8,905 elements shows no difference, and 28 full-page pixel comparisons (seven pages in both themes at 1280 and 390 px) are identical. The new `--label-start` and `--full` on toggle, checkbox and radio, `.glass-accordion__summary`, `.glass-toast[popover]` and `.glass-tooltip__hint` are not used by the template; `SKILL.md` §2c names them. What reaches it is GlassKit's focus ring on the accordion trigger, see below.
+
+### Fixed
+
+- **FAQ questions show a focus ring.** The template's ring sits 3 px outside an element, and `.glass-accordion__item` clips with `overflow: hidden`, so a keyboard user never saw it: under focus a closed question changed no pixel, and an open one kept only the ring's lower edge. The computed style reported a solid 2 px outline all along. GlassKit 1.39.0 adds a ring of its own inside the trigger, but it is tinted, 2.69:1 in the dark theme and 1.61:1 in the light theme, and on an open question it stood right above the leftover edge of ours, two lines over the answer. The template's ring now lies inside with `outline-offset: -2px`, on top of GlassKit's and on its corners: one line, 4.16–4.87:1 in the dark theme and 2.61–2.64:1 in the light theme. A smoke test covers it and fails without the rule. Every tab stop of five page types was then checked by comparing pixels with and without focus (141 stops at 1280 px, 106 at 390 px), and all of them show a change now.
+
+### Known
+
+- **The consent checkbox has a faint focus mark:** 1.68:1 in the dark theme, 1.27:1 in the light theme. Its input is invisible, so a ring on it cannot show, and what remains is GlassKit's `--gl-shadow-focus` around the box. That is GlassKit's checkbox, and its toggle and radio work the same way, reported here for upstream.
+- **The focus ring in the light theme reads 2.25–2.61:1**, below the 3:1 of a focus indicator. It is the same orange as the accent text; the `brand.css` recipe of 1.6.0 raises it as well, to 6.27:1 on an FAQ question.
+
+### For derived projects
+
+- Take `src/styles/site.css` and `SKILL.md` (`scripts/` is unchanged since 1.5.0); bump GlassKit to `^1.39.0`; `npm run check` prints nothing new.
+- From `tests/smoke.spec.ts` take the FAQ focus test.
+- Tab once through focusable elements inside `overflow: hidden` in the project's own components: the ring is cut off there, as it was in the FAQ (§7 step 9).
+
+### Template state at 1.6.1
+
+Astro 5 · GlassKit ^1.39.0 · focus ring visible on FAQ questions · everything else as at 1.6.0.
+
+---
+
 ## [1.6.0] – 2026-10-30
 
 ### Changed
