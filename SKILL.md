@@ -219,6 +219,11 @@ text: GlassKit leaves that to the brand, and brand.css carries the opt-in (badge
 as accent text, gradient text from primary-dark, measured 4.72–6.12:1). White on
 the accent fills reaches AA through GlassKit's `--gl-btn-primary-bg` and
 `--gl-color-primary-fill` (1.32) without touching the accent itself.
+The focus ring has a token of its own since GlassKit 1.40, `--gl-focus-ring`: solid,
+derived from the brand, with `--gl-border-focus` and `--gl-shadow-focus` following it.
+A brand needs no line for it. A colour of its own goes into `--gl-focus-ring`, solid
+and at 3:1 or more, in all three blocks; brand.css has the example. A project that
+still sets the other two tokens keeps the old tinted ring.
 Every value brand.css sets for `[data-theme="light"]` needs its twin in brand.css's
 no-JS block, or the dark value applies without JS — `npm run check:tokens` names
 any that is missing or differs. It reads either quote style and the `:root`/`html`
@@ -355,10 +360,10 @@ block in `src/pages/llms.txt.ts` (getCollection import + posts section + the
 - Import order in BaseLayout: `@jungherz-de/glasskit/glasskit.css` **before** `../styles/site.css`.
 - Keep the bootstrap script as `<script is:inline>` in `<head>` (it must run before first paint).
 - Build every page/anchor link with `href()` from `src/data/site.ts`: `href('/#preise')`, `href('/impressum/')` — subpage links with trailing slash. Inside a language branch include the prefix: `href('/en/#pricing')`.
-- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink. Accent drawn straight onto page or glass — eyebrows, links, step numbers, line icons, list markers, the focus ring — uses `var(--gl-color-primary-text, var(--gl-color-primary))` (GlassKit 1.26); fills, tints and glows keep `--gl-color-primary`. Text, links and chips on a `.glass-card` use `var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)))` (GlassKit 1.35) instead, and so does the focus ring there: a card is brighter than the page. Line icons on a card stay on the primary text. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to` (default primary → primary-dark) — the only site-layer hooks brand.css may set.
+- Use `--gl-*` tokens for every color/radius/shadow; brand re-colors go into `src/styles/brand.css` (token overrides, loads last), never as hex values in glw rules. A tint of the brand is `color-mix(in srgb, var(--gl-color-primary) 22%, transparent)` (the dark stop: `--gl-color-primary-dark`), never a fixed `rgba(245, 166, 35, …)` — that stays orange in every rebranded project and ignores the lighter light-theme primary. Text or icons on a filled primary surface use `var(--gl-color-on-primary, #fff)`, so a project's opt-in to dark AA ink (GlassKit 1.7.0) reaches them. Only imagery that stands in for a photo may keep fixed colours (the `.glw-media` base), and then with its own fixed ink. Accent drawn straight onto page or glass — eyebrows, links, step numbers, line icons, list markers — uses `var(--gl-color-primary-text, var(--gl-color-primary))` (GlassKit 1.26); fills, tints and glows keep `--gl-color-primary`. Text, links and chips on a `.glass-card` use `var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)))` (GlassKit 1.35) instead: a card is brighter than the page. Line icons on a card stay on the primary text. Gradient text (headline glint, stats, case metrics) runs from `--glw-gradient-text-from` to `--glw-gradient-text-to` (default primary → primary-dark) — the only site-layer hooks brand.css may set.
 - Icons in `.glass-btn--primary` are filled: GlassKit fills them (`stroke-width: 0`). Draw them as closed shapes (holes with `fill-rule="evenodd"`) or leave them out; outline icons belong in secondary and tertiary buttons. `npm run check:markup` flags open lines; overlapping closed shapes (a lens drawn inside a camera body) still need a look.
 - A glw rule that sets `display` on an element carrying `.glass-btn` needs both classes (`.glass-btn.glw-…`): once the element is a link, GlassKit's `a.glass-btn { display: inline-flex }` (0,1,1) beats a single class.
-- The focus ring (`:focus-visible` in site.css) sits 3 px outside an element, so a parent with `overflow: hidden` cuts it off while the computed style still reports it. Pull it inside there with `outline-offset: -2px`, as site.css does for `.glass-accordion__trigger`, and check with the keyboard, by eye.
+- Focus marks: GlassKit's components draw their own since 1.40, in `--gl-focus-ring`. The outline on `:focus-visible` in site.css covers only elements without a `glass-` class, so never restate it on a GlassKit component: it would lie beside GlassKit's ring as a second line. A glw element needs no focus rule of its own. Inside a parent with `overflow: hidden` the outline is cut off while the computed style still reports it: pull it in with `outline-offset: -2px`, and check with the keyboard, by eye.
 - Running text (rendered Markdown, legal pages) sits in a `glass-prose glw-prose` container. Do not restate what `.glass-prose` already styles; add to `.glw-prose` only what the site wants differently.
 - When GlassKit ships a component the glw layer already has, build on it the same way: markup carries both classes (`glass-x glw-x`), site.css keeps only the deviations, and the pair goes into `PAIRS` in `scripts/check-markup.mjs` — derived projects take site.css wholesale but never their markup (§7), and the guard tells them where the base class is missing. Adopt only without regression; measure narrow viewports first (§2c names the cases that stay separate and why).
 - Stacking: since GlassKit 1.15.1 `.glass-bg` is one isolated stacking context and its children (header, sections, footer) no longer form their own — every `z-index` on the page competes with every other. The header sits at 50 (mobile panel and language menu live inside it). Keep section content below 50, avoid negative `z-index` (it now resolves against `.glass-bg` and its aurora decoration), and give anything that must cover the header (cookie banner, overlay) a deliberate ≥ 100.
@@ -464,7 +469,12 @@ quietly — that is what the guards are for.
    pull `site/` (GlassKit Web's product page) into a derived project.
 6. **Bump GlassKit to the template's version** in the same pass:
    `git show template/main:package.json | grep glasskit`, then
-   `npm install @jungherz-de/glasskit@<that version>`.
+   `npm install @jungherz-de/glasskit@<that version>`. Then `npm audit fix`,
+   never with `--force`: that jumps Astro's major. **Keep Astro at the
+   template's major.** A jump on its own builds green and still breaks the
+   site: Astro 7's default CSS minifier, Lightning CSS, drops `backdrop-filter`
+   wherever `-webkit-backdrop-filter` follows, as it does in GlassKit's rules,
+   so nothing blurs in Chrome and Edge while Safari looks right.
 7. **Wire the guards** if the project predates them — `package.json` scripts:
    `"check": "npm run check:tokens && npm run check:markup"`,
    `"check:tokens": "node scripts/check-light-mirror.mjs"`,
@@ -490,7 +500,9 @@ quietly — that is what the guards are for.
      `--gl-border-warm`, `--gl-border-focus`, `--gl-shadow-btn-primary` and
      `--gl-shadow-focus` follow `--gl-color-primary` by themselves — manual
      overrides of these can usually go. Since 1.7.0 badge ink has its own
-     tokens (`--gl-color-*-on-surface`).
+     tokens (`--gl-color-*-on-surface`). Since GlassKit 1.40 overrides of
+     `--gl-border-focus` and `--gl-shadow-focus` must go: they keep the old
+     tinted ring. A colour of its own goes into `--gl-focus-ring`, solid (§3).
    - Icons in the project's own primary buttons: `npm run check:markup` flags
      open lines; look at the rest (GlassKit fills these icons, §4).
    - Buttons without `--auto` that take their width from their text: since

@@ -10,6 +10,44 @@ between your last synced release and the current one (SKILL.md, recipe §7).
 
 ---
 
+## [1.7.0] – 2026-11-04
+
+### Changed
+
+- **GlassKit `^1.39.0` → `^1.40.0`: one solid focus ring ([GlassKit #32](https://github.com/JUNGHERZ/GlassKit/issues/32)).** `--gl-focus-ring` is new and follows the brand, `--gl-border-focus` and `--gl-shadow-focus` take it, and buttons, pills and the theme toggle mark their focus by themselves now. The protocol over 8,905 elements shows no difference, and 28 full-page pixel comparisons (seven pages in both themes at 1280 and 390 px) are identical: all of this shows only with the keyboard.
+- **The template's focus rule steps back.** The outline on `:focus-visible` lay over everything, which now worked against GlassKit: fields showed two rings in two colours, and on FAQ questions the faint orange covered GlassKit's solid ring. site.css draws the outline only on elements without a `glass-` class now, in `--gl-focus-ring` and 2 px clear of them, as GlassKit does. The FAQ rule of 1.6.1 and the card rule of 1.6.0 are gone. Every element has exactly one mark. Measured by comparing pixels with and without focus over every tab stop of five page types (141 stops at 1280 px, 106 at 390 px): at least 4.73:1 in the dark theme and 3.64:1 in the light theme, where 1.6.1 read 1.68:1 and 1.27:1. Both "Known" points of 1.6.1, the faint mark of the consent checkbox and the ring in the light theme, are settled with that.
+- **The no-JS light mirror** takes one line, `--gl-focus-ring`. GlassKit's changelog names `--gl-border-focus` and `--gl-shadow-focus` as well, but both now read the same in the two themes and follow the mirrored token, so the mirror drops them: it holds only what differs.
+- **`npm audit fix` ([#22](https://github.com/JUNGHERZ/GlassKit-Web/issues/22)):** 14 findings down to 5, through 19 transitive packages within their ranges. The build stays byte-identical.
+
+### Added
+
+- **Two smoke tests.** One checks that every element has exactly one focus mark, and fails against the old rule. The other checks that a card keeps its `backdrop-filter` in the built CSS, and fails against Astro 7's default build, see below.
+
+### Known
+
+- **Astro stays at 5 for now ([#22](https://github.com/JUNGHERZ/GlassKit-Web/issues/22)).** The 5 findings left, `astro` (1 critical), `sharp`, `zod`, `zod-to-ts` and `esbuild`, are fixed only by Astro 7. None reaches a visitor: the sites are static, and the advisories need a server mode, the dev server or untrusted input in the build. The critical one needs a crafted AVIF file in a build; the template processes no images. Astro 5 and 6 have had no release since May and June, though, so no further fixes will come.
+- **Do not bump Astro alone.** Tested on copies of the template and six derived projects. Astro 7 builds all of them green, and every build is wrong in a way no build error shows:
+  - Lightning CSS, its default CSS minifier, drops `backdrop-filter` wherever `-webkit-backdrop-filter` follows, as in GlassKit's rules. In Chromium the demo goes from 101 blurred elements to 0, in WebKit nothing changes. Browser targets do not help. `vite: { build: { cssMinify: 'esbuild' } }` with `esbuild` as a dev dependency gives CSS byte-identical to today's.
+  - `compressHTML` defaults to `'jsx'`, which changes the whitespace at 3,228 tag boundaries of the demo; by Astro's guide a space between inline elements can vanish that way. `compressHTML: true` keeps the visible text identical.
+  - It needs Node 22.23.4 or later, and `z` moves to `astro/zod`.
+  - Run by an AI agent, `astro preview` detaches into the background, and Playwright's `webServer` reports that it exited early; `--ignore-lock` keeps it in the foreground.
+  - A build hook that reads `target` in `astro:build:setup` no longer gets it.
+
+  With these changes the template and five of the projects build with identical CSS and the same visible text, and `npm audit` reports 0. The smoke tests were run on the template only.
+
+### For derived projects
+
+- Take `src/styles/site.css` and `SKILL.md` (`scripts/` is unchanged since 1.5.0); bump GlassKit to `^1.40.0`; run `npm run check`, then `npm audit fix`, never with `--force`, which jumps Astro's major.
+- In `brand.css` delete `--gl-border-focus` and `--gl-shadow-focus` if they are set: a project that keeps them keeps the old tinted ring. A colour of its own goes into `--gl-focus-ring`, solid (§3, example in the template's brand.css).
+- From `tests/smoke.spec.ts` take the two new tests, and drop the FAQ focus test of 1.6.1.
+- Look for a focus rule of the project's own that restates the outline on a GlassKit component: it is a second line beside GlassKit's ring now (§4).
+
+### Template state at 1.7.0
+
+Astro 5 · GlassKit ^1.40.0 · one focus mark per element, all in `--gl-focus-ring` · everything else as at 1.6.1.
+
+---
+
 ## [1.6.1] – 2026-11-01
 
 ### Changed

@@ -44,7 +44,7 @@
    Eine Primärfarbe, die für weiße Button-Schrift abgedunkelt ist
    (z. B. #c25028), ist als Text auf dem dunklen Grund zu dunkel.
    Die Buttons behalten sie; Akzent-Text (Eyebrows, Links, Schritt-
-   Nummern, Fokusring — --gl-color-primary-text, GlassKit ≥ 1.26)
+   Nummern — --gl-color-primary-text, GlassKit ≥ 1.26)
    und die Verlaufsschriften (Glint, Kennzahlen) werden im Dark-
    Theme aufgehellt. Gemessen mit #c25028 auf dem Standard-Dark-
    Grund: Akzent-Text 4,98–12,6:1 statt 1,35–3,41:1, Glint
@@ -92,8 +92,7 @@
    Verlaufsschriften von Primary-dark starten. Gemessen auf den
    Gründen der Demo: Akzent-Text und Icons 4,72–6,12:1 statt
    1,97–2,55:1, Verlaufsschrift 3,40 → 5,81:1 statt 2,42 → 3,40:1
-   (Großschrift, Grenze 3:1). Der Fokusring zieht mit: auf einer
-   FAQ-Frage 6,27:1 statt 2,61:1.
+   (Großschrift, Grenze 3:1).
 
    Beide Blöcke sind nötig: ohne JavaScript fehlt data-theme, das
    übernimmt der No-JS-Block (auch beim Drucken). Wer auch das
@@ -125,6 +124,31 @@
 /*
 [data-theme="light"] {
   --gl-color-primary:        #0062cc;
+}
+*/
+
+
+/* ============================================================
+   OPTIONAL: Eigene Farbe für den Fokusring
+
+   --gl-focus-ring (GlassKit ≥ 1.40) folgt der Marke von selbst,
+   Buttons, Felder und Links nehmen denselben Ring. Nur für eine
+   abweichende Farbe setzen: deckend und mit mindestens 3:1 gegen
+   Seite und Karte. --gl-border-focus und --gl-shadow-focus leiten
+   sich davon ab, wer sie selbst setzt, behält den alten blassen Ring.
+   ============================================================ */
+
+/*
+:root, [data-theme="dark"] {
+  --gl-focus-ring:           #66afff;
+}
+[data-theme="light"] {
+  --gl-focus-ring:           #0055cc;
+}
+@media (prefers-color-scheme: light), print {
+  :root:not([data-theme]) {
+    --gl-focus-ring:         #0055cc;
+  }
 }
 */
 

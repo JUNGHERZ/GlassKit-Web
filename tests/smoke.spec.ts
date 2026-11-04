@@ -172,7 +172,7 @@ test('Akzent-Text folgt --gl-color-primary-text, Verlaufsschrift ihren Stellschr
   await expect(page.locator('.glass-btn--primary').first()).not.toHaveCSS('background-image', /rgb\(1, 2, 3\)/);
 });
 
-test('Akzent auf Karten folgt --gl-color-primary-on-glass, auch der Fokusring', async ({ page }) => {
+test('Akzent auf Karten folgt --gl-color-primary-on-glass', async ({ page }) => {
   // Eine Karte ist heller als die Seite (GlassKit 1.35): Text, Links und Chips dort
   const glass = ':root { --gl-color-primary-on-glass: rgb(1, 2, 3); }';
   await page.goto('');
@@ -185,26 +185,47 @@ test('Akzent auf Karten folgt --gl-color-primary-on-glass, auch der Fokusring', 
 
   await page.goto('blog/');
   await page.addStyleTag({ content: glass });
-  const more = page.locator('.glw-post-card__more').first();
-  await expect(more).toHaveCSS('color', 'rgb(1, 2, 3)');
-  await more.focus();
-  await page.keyboard.press('Shift+Tab');
-  await page.keyboard.press('Tab');
-  await expect(more).toBeFocused();
-  await expect(more).toHaveCSS('outline-color', 'rgb(1, 2, 3)');
+  await expect(page.locator('.glw-post-card__more').first()).toHaveCSS('color', 'rgb(1, 2, 3)');
 });
 
-test('FAQ: Der Fokusring liegt innen, das Item schneidet außen ab', async ({ page }) => {
-  // .glass-accordion__item hat overflow: hidden — ein Ring außerhalb des Triggers bleibt unsichtbar,
-  // obwohl der Computed Style ihn meldet
+test('Fokus: genau eine Markierung je Element, alle in --gl-focus-ring', async ({ page }) => {
+  // GlassKit markiert seine Bausteine seit 1.40 selbst, die Outline aus site.css gilt nur für
+  // Elemente ohne glass-Klasse. Sonst lägen an Feldern zwei Ringe nebeneinander, und in der FAQ
+  // schnitte .glass-accordion__item (overflow: hidden) die Outline ab
   await page.goto('');
-  const trigger = page.locator('.glass-accordion__item:not(.only-b2b) .glass-accordion__trigger').nth(1);
-  await trigger.focus();
-  await page.keyboard.press('Shift+Tab');
-  await page.keyboard.press('Tab');
-  await expect(trigger).toBeFocused();
-  await expect(trigger).toHaveCSS('outline-style', 'solid');
-  await expect(trigger).toHaveCSS('outline-offset', '-2px');
+  await page.addStyleTag({ content: ':root { --gl-focus-ring: rgb(1, 2, 3); }' });
+  const tab = async (sel: string) => {
+    const el = page.locator(sel).first();
+    await el.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(el, sel).toBeFocused();
+    return el;
+  };
+
+  for (const sel of ['.glw-seg__btn', '.glw-hero .glass-btn--primary']) {
+    const el = await tab(sel);
+    await expect(el, sel).toHaveCSS('outline-style', 'solid');
+    await expect(el, sel).toHaveCSS('outline-color', 'rgb(1, 2, 3)');
+    await expect(el, sel).toHaveCSS('outline-offset', '2px');
+  }
+
+  const faq = await tab('.glass-accordion__item:not(.only-b2b) .glass-accordion__trigger');
+  await expect(faq).toHaveCSS('outline-style', 'none');
+  await expect(faq).toHaveCSS('box-shadow', /rgb\(1, 2, 3\) 0px 0px 0px 2px inset/);
+
+  const field = await tab('#kontakt input.glass-input');
+  await expect(field).toHaveCSS('outline-style', 'none');
+  await expect(field).toHaveCSS('box-shadow', /rgb\(1, 2, 3\) 0px 0px 0px 2px/);
+});
+
+test('Glas: Karten behalten backdrop-filter im gebauten CSS', async ({ page }) => {
+  // Lightning CSS, der Standard-Minifier ab Astro 7, streicht backdrop-filter, wo
+  // -webkit-backdrop-filter folgt. Safari merkt das nicht, Chrome zeigt kein Glas mehr,
+  // und der Build bleibt grün
+  await page.goto('');
+  test.skip(await page.locator('html').getAttribute('data-surface') !== null, 'Presets dürfen ohne Blur sein');
+  await expect(page.locator('.glass-card').first()).toHaveCSS('backdrop-filter', /blur\(/);
 });
 
 test('Kontaktformular: Hinweis bei fehlenden Pflichtfeldern, danach Demo-Versand', async ({ page }) => {

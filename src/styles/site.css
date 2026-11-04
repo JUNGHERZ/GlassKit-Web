@@ -24,28 +24,26 @@ body { margin: 0; }
 ::selection { background: color-mix(in srgb, var(--gl-color-primary) 35%, transparent); }
 
 /* Akzentfarben: --gl-color-primary ist die Fläche (Buttons, Tönungen, Glows).
-   Als Text, Linien-Icon oder Fokusring direkt auf Seite und Glas steht
+   Als Text oder Linien-Icon direkt auf Seite und Glas steht
    --gl-color-primary-text (GlassKit ≥ 1.26, ohne eigenen Wert = Primary).
    Eine Karte ist heller als die Seite: Text, Links und Chips auf .glass-card
    nehmen --gl-color-primary-on-glass (GlassKit ≥ 1.35, im Dark-Theme mit 40 %
-   Weiß, im Light-Theme = Primary-Text), ebenso der Fokusring dort.
+   Weiß, im Light-Theme = Primary-Text).
    Die Verlaufsschriften (Glint, Kennzahlen, Case-Metriken) laufen von
    --glw-gradient-text-from nach --glw-gradient-text-to, ohne eigene Werte
    Primary → Primary-dark. Eine Marke mit dunkler Primärfarbe hellt beides im
    Dark-Theme auf — Rezept in brand.css. */
-:focus-visible {
-  outline: 2px solid var(--gl-color-primary-text, var(--gl-color-primary));
-  outline-offset: 3px;
-}
 
-.glass-card :focus-visible {
-  outline-color: var(--gl-color-primary-on-glass, var(--gl-color-primary-text, var(--gl-color-primary)));
+/* Fokus: GlassKits Bausteine markieren sich seit 1.40 selbst, deckend in
+   --gl-focus-ring: Buttons mit einer Outline, Felder und das Akkordeon mit
+   einem Ring, auch unter Forced Colors. Eine Outline von hier läge dort als
+   zweite Linie daneben. Diese Regel gilt deshalb nur für Elemente ohne
+   glass-Klasse: Links, die Segment-Knöpfe und was der Website-Layer sonst
+   selbst baut. */
+:focus-visible:not([class*="glass-"]) {
+  outline: 2px solid var(--gl-focus-ring, var(--gl-color-primary));
+  outline-offset: 2px;
 }
-
-/* Das Akkordeon-Item schneidet mit overflow: hidden alles außerhalb des
-   Triggers ab. Nach innen gezogen bleibt der Ring sichtbar und liegt genau auf
-   GlassKits blasserem Inset-Ring (GlassKit ≥ 1.39), den er abdeckt. */
-.glass-accordion__trigger:focus-visible { outline-offset: -2px; }
 
 /* Skip-Link (BaseLayout): erster Tab-Stopp jeder Seite, unsichtbar bis zum
    Tastaturfokus, dann oben links über dem Header (z-index über dessen 50,
@@ -130,7 +128,7 @@ body { margin: 0; }
     --gl-border-strong:        rgba(0, 0, 0, 0.15);
     --gl-border-milk:          rgba(0, 0, 0, 0.10);
     --gl-border-warm:          color-mix(in srgb, var(--gl-color-primary) 30%, transparent);
-    --gl-border-focus:         color-mix(in srgb, var(--gl-color-primary) 50%, transparent);
+    --gl-focus-ring:           var(--gl-color-primary-on-surface);
     --gl-icon-default:         rgba(26, 42, 54, 0.65);
     --gl-icon-muted:           rgba(26, 42, 54, 0.55);
     --gl-icon-strong:          rgba(26, 42, 54, 0.80);
@@ -143,7 +141,6 @@ body { margin: 0; }
     --gl-shadow-glow:          0 2px 8px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
     --gl-shadow-modal:         0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
     --gl-shadow-toast:         0 4px 20px rgba(0, 0, 0, 0.10);
-    --gl-shadow-focus:         0 0 0 3px color-mix(in srgb, var(--gl-color-primary) 25%, transparent);
     --gl-inset-subtle:         inset 0 1px 1px rgba(255, 255, 255, 0.60);
     --gl-inset-medium:         inset 0 1px 1px rgba(255, 255, 255, 0.70);
     --gl-inset-strong:         inset 0 1px 2px rgba(255, 255, 255, 0.80);
